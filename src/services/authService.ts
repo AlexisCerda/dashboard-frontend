@@ -1,0 +1,27 @@
+const API_URL = "http://localhost:8080/api";
+
+export const loginAgent = async (email: string, motDePasse: string) => {
+  try {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email,
+        motDePasse: motDePasse
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Email ou mot de passe incorrect");
+    }
+
+    const data = await response.json();
+    return data;
+
+  } catch (error) {
+    console.error("Erreur de connexion :", error);
+    throw error;
+  }
+};
