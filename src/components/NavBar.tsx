@@ -1,6 +1,7 @@
 import { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import SelectGroupe from './SelectGroupe';
 
 export default function NavBar() {
   const context = useContext(AuthContext);
@@ -19,10 +20,12 @@ export default function NavBar() {
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
               {context?.isLogged && (
-                <Link to="/dashboard" className="hover:bg-gray-500 px-3 py-2 rounded-md text-sm font-medium">
-                  Mon Tableau de Bord
-                </Link>
-                
+                <>
+                  <Link to="/dashboard" className="hover:bg-gray-500 px-3 py-2 rounded-md text-sm font-medium">
+                    Mon Tableau de Bord
+                  </Link>
+                  <SelectGroupe/>
+                </>
               )}
               <Link to="/help" className="hover:bg-gray-500 px-3 py-2 rounded-md text-sm font-medium">
                 Tutoriel
