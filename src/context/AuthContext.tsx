@@ -10,8 +10,8 @@ interface AuthContextType {
   login: (idUser: number, token: string) => void;
   logout: () => void;
   isLogged: boolean;
-  groupeActifId: string | null;
-  setGroupeActifId: (id:string |null) => void;
+  groupeActifId: string;
+  setGroupeActifId: (id:string) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('sidsic_idUser');
   };
 
-  const [groupeActifId, setGroupeActifId] = useState<string | null>(null);
+  const [groupeActifId, setGroupeActifId] = useState<string>("");
 
   return (
     <AuthContext.Provider value={{ auth, login, logout, isLogged,groupeActifId, setGroupeActifId }}>

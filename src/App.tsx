@@ -4,6 +4,7 @@ import './index.css';
 import DashboardPage from './pages/DashboardPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import NavBar from './components/NavBar';
+import UpdateUserPage from './pages/UpdateUserPage';
 
 
 
@@ -18,7 +19,12 @@ function App() {
             <ProtectedRoute>
               <DashboardPage />
             </ProtectedRoute> } />
-        <Route path='*' element={<DashboardPage/>}/>
+        <Route path='/help'></Route>
+        <Route path='/update-user' element={<UpdateUserPage/>}></Route>
+        <Route path='*' element={
+          <ProtectedRoute>
+          <DashboardPage/>
+          </ProtectedRoute>}/>
       </Routes>
     </BrowserRouter>
   );

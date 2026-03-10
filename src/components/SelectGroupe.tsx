@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { useGetCurrentGroupe, useGetGroupesUtilisateur } from "../services/membreService";
+import { useGetCurrentGroupe, useGetGroupesUtilisateur, usePatchCurrentGroupe } from "../services/membreService";
 
 export default function SelectGroupe() {
   const context = useContext(AuthContext); 
@@ -8,6 +8,7 @@ export default function SelectGroupe() {
 
   const getCurrentGroupe = useGetCurrentGroupe();
   const getGroupesUtilisateur = useGetGroupesUtilisateur();
+  const patchCurrentGroupe = usePatchCurrentGroupe();
 
   useEffect(() => {
     const fetchDonnees = async () => {
@@ -28,8 +29,15 @@ export default function SelectGroupe() {
     fetchDonnees();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    context?.setGroupeActifId(e.target.value);
+  const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedValue = e.target.value;
+    context?.setGroupeActifId(selectedValue);
+
+    try {
+      await patchCurrentGroupe(Number(selectedValue));
+    } catch (error) {
+      console.error("Erreur lors de la mise a jour du groupe actif:", error);
+    }
   };
 
   return (
