@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import NavBar from './components/NavBar';
 import UpdateUserPage from './pages/UpdateUserPage';
 import { UpdateGroupePage } from './pages/UpdateGroupePage';
+import SigninPage from './pages/SigninPage';
 
 
 
@@ -16,6 +17,7 @@ function App() {
       <NavBar />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path='/Signin' element={<SigninPage/>}/>
         <Route path="/dashboard" element={
             <ProtectedRoute>
               <DashboardPage />

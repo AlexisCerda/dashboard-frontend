@@ -40,9 +40,15 @@ export default function NavBar() {
                   className="bg-red-700 hover:bg-red-500 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
                   Déconnexion </button> </>) 
             : (
+              <div>
               <Link to="/login"
                 className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
                 Connexion </Link>
+              <Link to="/Signin"
+              className=" m-5 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                Inscription
+              </Link>
+              </div>
             )}
           </div>
           <div>

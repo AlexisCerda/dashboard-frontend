@@ -24,7 +24,7 @@ export function ButtonAdminGroupe(){
     return <></>;
   }
 
-  return <Link to="update-group">
+  return <Link to="/update-group">
     <Settings2/>
   </Link>;
 }

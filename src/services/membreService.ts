@@ -230,3 +230,35 @@ export const useGetUserByGroupe = () => {
 
   return GetUserByGroupe;
 }
+
+export const useCreateUser = ()=>{
+  const CreateUser = async (pwd : string, u : User ) => {
+    try {
+      const response = await fetch(`${API_URL}/membres/${pwd}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+        id: 0,
+        nom: u.nom,
+        prenom : u.prenom,
+        email : u.email
+      }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return CreateUser;
+}
