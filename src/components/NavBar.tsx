@@ -1,7 +1,6 @@
-import { useContext, useState } from 'react';
-import { Link, Links, useNavigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import SelectGroupe from './SelectGroupe';
 import { UserCog } from 'lucide-react';
 
 export default function NavBar() {

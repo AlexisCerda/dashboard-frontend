@@ -3,7 +3,7 @@ import { useGetAdminUserByGroupe } from "../services/membreService";
 import { AuthContext } from "../context/AuthContext";
 import type { User } from "../types/User";
 import { Link } from "react-router-dom";
-import { Cog, Settings2 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 
 export function ButtonAdminGroupe(){
   const GetAdminUserByGroupe = useGetAdminUserByGroupe();

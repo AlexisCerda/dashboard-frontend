@@ -179,7 +179,6 @@ export const useUpdatePwdUser = () => {
 }
 
 export const useGetAdminUserByGroupe = () => {
-  const context = useContext(AuthContext);
 
   const GetAdminUserByGroupe = async (idGroupe : number) => {
     try {
@@ -207,8 +206,6 @@ export const useGetAdminUserByGroupe = () => {
 }
 
 export const useGetUserByGroupe = () => {
-  const context = useContext(AuthContext);
-
   const GetUserByGroupe = async (idGroupe : number) => {
     try {
       const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres`, {

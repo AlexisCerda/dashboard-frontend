@@ -1,5 +1,4 @@
-import { useContext, useState, useEffect } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { useState, useEffect } from "react";
 import { useGetUser, useUpdatePwdUser, useUpdateUser } from "../services/membreService";
 
 export type User = {
@@ -9,7 +8,6 @@ export type User = {
 };
 
 export default function UpdateUserPage() {
-  const authContext = useContext(AuthContext);
   const [erreur, setErreur] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
