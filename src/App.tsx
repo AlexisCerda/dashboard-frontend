@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import NavBar from './components/NavBar';
 import UpdateUserPage from './pages/UpdateUserPage';
+import { UpdateGroupePage } from './pages/UpdateGroupePage';
 
 
 
@@ -20,10 +21,19 @@ function App() {
               <DashboardPage />
             </ProtectedRoute> } />
         <Route path='/help'></Route>
-        <Route path='/update-user' element={<UpdateUserPage/>}></Route>
+        <Route path='/update-user' element={
+          <ProtectedRoute>
+            <UpdateUserPage/>
+          </ProtectedRoute>
+        }></Route>
+        <Route path='/update-group' element={
+          <ProtectedRoute>
+            <UpdateGroupePage/>
+          </ProtectedRoute>
+        }></Route>
         <Route path='*' element={
           <ProtectedRoute>
-          <DashboardPage/>
+            <DashboardPage/>
           </ProtectedRoute>}/>
       </Routes>
     </BrowserRouter>
