@@ -39,9 +39,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setAuth({ idUser: null, token: null });
     localStorage.removeItem('sidsic_token');
     localStorage.removeItem('sidsic_idUser');
+    localStorage.removeItem('sidsic_groupeActifId');
+    setGroupeActifIdState("");
   };
 
-  const [groupeActifId, setGroupeActifId] = useState<string>("");
+  const [groupeActifId, setGroupeActifIdState] = useState<string>(
+    () => localStorage.getItem('sidsic_groupeActifId') ?? ""
+  );
+
+  const setGroupeActifId = (id: string) => {
+    localStorage.setItem('sidsic_groupeActifId', id);
+    setGroupeActifIdState(id);
+  };
 
   return (
     <AuthContext.Provider value={{ auth, login, logout, isLogged,groupeActifId, setGroupeActifId }}>

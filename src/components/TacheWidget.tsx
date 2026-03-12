@@ -25,7 +25,6 @@ export default function WidgetTaches({ groupeId }: WidgetTachesProps) {
       webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
       
       onConnect: () => {
-        console.log(`🟢 Connecté à la radio du serveur !`);
         
         const frequence = `/topic/groupe/${groupeId}`;
         
@@ -37,7 +36,6 @@ export default function WidgetTaches({ groupeId }: WidgetTachesProps) {
         });
       },
       onDisconnect: () => {
-        console.log('🔴 Déconnecté de la radio.');
       }
     });
 

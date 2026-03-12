@@ -8,25 +8,28 @@ export const useGetCurrentGroupe = () => {
   const context = useContext(AuthContext);
 
   const getCurrentGroupe = async () => {
-    try {
-      const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}/groupe-actuel`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("L'utilisateur n'existe pas");
-      }
-
-      const data = await response.json();
-      return data;
-
-    } catch (error) {
-      console.error("Erreur :", error);
-      throw error;
+    if (!context?.auth.idUser) {
+      return null;
     }
+
+    const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}/groupe-actuel`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(context.auth.token ? { Authorization: `Bearer ${context.auth.token}` } : {}),
+      },
+    });
+
+    if (response.status === 401 || response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error("Impossible de recuperer le groupe actif");
+    }
+
+    const data = await response.json();
+    return data;
   };
   
   return getCurrentGroupe;
@@ -261,4 +264,133 @@ export const useCreateUser = ()=>{
   };
 
   return CreateUser;
+}
+
+export const useGetAllUser = ()=>{
+  const GetAllUser = async () => {
+    try {
+      const response = await fetch(`${API_URL}/membres`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return GetAllUser;
+}
+
+export const useAddUserByGroupe = ()=>{
+  const AddUser = async (idGroupe : string, idMembre: string, idMembreActuel: string) => {
+    try {
+      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/added-by/${idMembreActuel}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return AddUser;
+}
+
+export const useUpdateMembreToAdmin = ()=>{
+  const UserAdmin = async (idGroupe : string, idMembre: string, idMembreActuel: string) => {
+    try {
+      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/promote/by/${idMembreActuel}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return UserAdmin;
+}
+
+export const useUpdateAdminToMembre = ()=>{
+  const UserAdmin = async (idGroupe : string, idMembre: string, idMembreActuel: string) => {
+    try {
+      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/demote/by/${idMembreActuel}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return UserAdmin;
+}
+
+export const useRemoveUserByGroupe = ()=>{
+  const UserAdmin = async (idGroupe : string, idMembre: string) => {
+    try {
+      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return UserAdmin;
 }
