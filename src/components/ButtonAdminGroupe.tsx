@@ -9,6 +9,7 @@ export function ButtonAdminGroupe(){
   const GetAdminUserByGroupe = useGetAdminUserByGroupe();
   const context = useContext(AuthContext);
   const [user, setUser] = useState<User | null>(null);
+  const [isUrgent, setIsUrgent] = useState<boolean>(false);
 
   useEffect(() => {
       const fetchUser = async () => {
@@ -16,15 +17,21 @@ export function ButtonAdminGroupe(){
           const resultatUser: User[] = await GetAdminUserByGroupe(Number(context.groupeActifId));
           const foundUser = resultatUser.find((u) => u.id === context.auth.idUser) ?? null;
           setUser(foundUser);
+          if(resultatUser.length === 0){
+            setIsUrgent(true);
+          }else{
+            setIsUrgent(false);
+          }
+          
         }};
       fetchUser();
   }, [context?.groupeActifId]);
-  
-  if(!user){
+  if(!user && isUrgent === false){
     return <></>;
-  }
+  } else {
 
   return <Link to="/update-group">
     <Settings2/>
   </Link>;
+  }
 }

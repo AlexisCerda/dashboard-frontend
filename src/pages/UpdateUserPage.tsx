@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
-import { useGetUser, useUpdatePwdUser, useUpdateUser } from "../services/membreService";
+import { useState, useEffect, useContext } from "react";
+import { useDeleteUser, useGetUser, useUpdatePwdUser, useUpdateUser } from "../services/membreService";
+import {TrashIcon } from "lucide-react";
+import { AuthContext } from "../context/AuthContext";
+import ConfirmModal from "../components/ConfirmeModalProps";
 
 export type User = {
   nom: string;
@@ -8,16 +11,18 @@ export type User = {
 };
 
 export default function UpdateUserPage() {
+  const context = useContext(AuthContext); 
   const [erreur, setErreur] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const UpdateUser = useUpdateUser();
   const GetUser = useGetUser();
   const UpdatePwdUser = useUpdatePwdUser();
-
+  const DeleteUser = useDeleteUser();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -34,6 +39,16 @@ export default function UpdateUserPage() {
     fetchUser();
   }, []);
 
+  async function handleLeave(userId: string) {
+    try {
+      console.log("Suppression du compte en cours d'envoi au serveur...");
+      await DeleteUser(userId);
+      context?.logout();
+    } catch (error) {
+      console.error("Erreur de suppression", error);
+      setErreur("Impossible de supprimer le compte");
+    }
+  }
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -56,6 +71,7 @@ export default function UpdateUserPage() {
     };
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-6">
       {erreur && (
         <div className="p-3 bg-red-100 text-red-700 text-sm rounded-lg border border-red-200">
@@ -135,5 +151,23 @@ export default function UpdateUserPage() {
         Changer
       </button>
     </form>
-  );
-}
+    {context?.auth.idUser != null && (
+      <>
+        <button className="m-5" onClick={() => setIsModalOpen(true)}>
+          <TrashIcon/>
+        </button>
+        <ConfirmModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onConfirm={() => {
+            void handleLeave(String(context.auth.idUser));
+          }}
+          title="Supprimer le compte"
+          message="Es-tu sûr de vouloir supprimer ton compte ?"
+        />
+      </>
+    )}
+    </>
+    );
+  }
+

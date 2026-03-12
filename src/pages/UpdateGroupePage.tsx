@@ -1,13 +1,30 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { useAddUserByGroupe, useGetAdminUserByGroupe, useGetAllUser, useGetUserByGroupe, useRemoveUserByGroupe, useUpdateAdminToMembre, useUpdateMembreToAdmin } from "../services/membreService";
+import {
+  useAddUserByGroupe,
+  useGetAdminUserByGroupe,
+  useGetAllUser,
+  useGetUserByGroupe,
+  useRemoveUserByGroupe,
+  useUpdateAdminToMembre,
+  useUpdateMembreToAdmin,
+  useUpdateMembreToAdminUrgent,
+} from "../services/membreService";
 import type { User } from "../types/User";
-import { ChevronsDown, ChevronsUp, CirclePlus, LogOut, User as UserIcon, UserPlus, UserStar } from "lucide-react";
+import {
+  ChevronsDown,
+  ChevronsUp,
+  CirclePlus,
+  LogOut,
+  User as UserIcon,
+  UserPlus,
+  UserStar,
+} from "lucide-react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { useNavigate } from "react-router-dom";
 
-export function UpdateGroupePage(){
+export function UpdateGroupePage() {
   const navigate = useNavigate();
   const GetUserByGroupe = useGetUserByGroupe();
   const context = useContext(AuthContext);
@@ -16,6 +33,7 @@ export function UpdateGroupePage(){
   const RemoveUser = useRemoveUserByGroupe();
   const GetUserAdmin = useGetAdminUserByGroupe();
   const UpdateUsertoAdmin = useUpdateMembreToAdmin();
+  const UpdateUsertoAdminUrgent = useUpdateMembreToAdminUrgent();
   const UpdateAdmintoUser = useUpdateAdminToMembre();
 
   const [currentuser, setCurrentuser] = useState<User>();
@@ -23,6 +41,7 @@ export function UpdateGroupePage(){
   const [userAdmin, setUserAdmin] = useState<User[]>([]);
   const [alluser, setAllUser] = useState<User[]>([]);
   const [verifAddUser, setVerifAddUser] = useState(false);
+  const [isUrgent, setIsUrgent] = useState<boolean>(false);
 
   async function refreshGroupData() {
     if (!context?.groupeActifId) {
@@ -37,10 +56,10 @@ export function UpdateGroupePage(){
 
     setUsers(resultatUser);
     setUserAdmin(resultatAdmin);
+    setIsUrgent(resultatAdmin.length === 0);
 
     return { resultatUser, resultatAdmin };
   }
-
   useEffect(() => {
     if (!context?.groupeActifId || context.auth.idUser == null) {
       return;
@@ -59,7 +78,7 @@ export function UpdateGroupePage(){
               }
 
               const isCurrentUserStillAdmin = groupData.resultatAdmin.some(
-                (admin: User) => admin.id === context.auth.idUser
+                (admin: User) => admin.id === context.auth.idUser,
               );
 
               if (!isCurrentUserStillAdmin) {
@@ -79,60 +98,83 @@ export function UpdateGroupePage(){
   }, [context?.groupeActifId, context?.auth.idUser, navigate]);
 
   useEffect(() => {
-        const fetchUser = async () => {
-          if (context?.groupeActifId) {
-            const resultatUser: User[] = await GetUserByGroupe(Number(context.groupeActifId));
-            setUsers(resultatUser);
-          }};
-        fetchUser();
+    const fetchUser = async () => {
+      if (context?.groupeActifId) {
+        const resultatUser: User[] = await GetUserByGroupe(
+          Number(context.groupeActifId),
+        );
+        setUsers(resultatUser);
+      }
+    };
+    fetchUser();
   }, [context?.groupeActifId]);
 
   useEffect(() => {
-        const fetchUser = async () => {
-          if (context?.groupeActifId) {
-            const resultatUser: User[] = await GetAllUser();
-            setAllUser(resultatUser);
-          }};
-        fetchUser();
+    const fetchUser = async () => {
+      if (context?.groupeActifId) {
+        const resultatUser: User[] = await GetAllUser();
+        setAllUser(resultatUser);
+      }
+    };
+    fetchUser();
   }, [context?.groupeActifId]);
 
   useEffect(() => {
-        const fetchUser = async () => {
-          if (context?.groupeActifId) {
-            const resultatUser: User[] = await GetUserAdmin(Number(context.groupeActifId));
-            setUserAdmin(resultatUser);
-          }};
-        fetchUser();
+    const fetchUser = async () => {
+      if (context?.groupeActifId) {
+        const resultatUser: User[] = await GetUserAdmin(
+          Number(context.groupeActifId),
+        );
+        setUserAdmin(resultatUser);
+        setIsUrgent(resultatUser.length === 0);
+      }
+    };
+    fetchUser();
   }, [context?.groupeActifId]);
-
 
   useEffect(() => {
     setCurrentuser(users.find((user) => user.id === context?.auth.idUser));
   }, [users, context?.auth.idUser]);
 
-  const availableUsers = alluser
-    .filter((user) => !users.some((u) => u.id === user.id));
+  const availableUsers = alluser.filter(
+    (user) => !users.some((u) => u.id === user.id),
+  );
 
-  const uniqueUsers = users
-    .filter((user, index, array) => array.findIndex((u) => u.id === user.id) === index);
+  const uniqueUsers = users.filter(
+    (user, index, array) => array.findIndex((u) => u.id === user.id) === index,
+  );
 
-  function HandleAddUser(){
+  function HandleAddUser() {
     setVerifAddUser((prev) => !prev);
   }
 
-  async function HandlePromoteUser(userId: number){
+  async function HandlePromoteUser(userId: number) {
     if (!context?.groupeActifId || context.auth.idUser == null) {
       return;
     }
-    await UpdateUsertoAdmin(context.groupeActifId, String(userId), String(context.auth.idUser));
-    await refreshGroupData();
+    console.log(isUrgent);
+    
+    if(isUrgent){
+      await UpdateUsertoAdminUrgent(context.groupeActifId, String(userId));
+    }else{
+      await UpdateUsertoAdmin(
+        context.groupeActifId,
+        String(userId),
+        String(context.auth.idUser),
+      );
+      await refreshGroupData();
+    }
   }
 
-  async function HandleDemoteUser(userId: number){
+  async function HandleDemoteUser(userId: number) {
     if (!context?.groupeActifId || context.auth.idUser == null) {
       return;
     }
-    await UpdateAdmintoUser(context.groupeActifId, String(userId), String(context.auth.idUser));
+    await UpdateAdmintoUser(
+      context.groupeActifId,
+      String(userId),
+      String(context.auth.idUser),
+    );
     await refreshGroupData();
   }
 
@@ -141,7 +183,11 @@ export function UpdateGroupePage(){
       return;
     }
 
-    await AddUser(context.groupeActifId, String(userId), String(context.auth.idUser));
+    await AddUser(
+      context.groupeActifId,
+      String(userId),
+      String(context.auth.idUser),
+    );
     await refreshGroupData();
   }
 
@@ -153,33 +199,89 @@ export function UpdateGroupePage(){
     await RemoveUser(context.groupeActifId, String(userId));
     await refreshGroupData();
   }
-  return <>
-    <div>
-      <ul>
-        {uniqueUsers.map((user: User) => (
-          <li key={user.id}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }} className="m-5">
-              {user.nom} {user.prenom} {user.id === currentuser?.id && <><UserIcon/><UserStar/></>}
-              {userAdmin.filter((e) => e.id != currentuser?.id).some((admin) => admin.id === user.id) ? <><UserStar/> <button onClick={() => void HandleDemoteUser(user.id)}> <ChevronsDown/> </button></> :
-                user.id !== currentuser?.id &&  <button type="button" onClick={() => void HandlePromoteUser(user.id)}><ChevronsUp /></button>}
-              {user.id !== currentuser?.id && <button onClick={() => void handleRemoveUser(user.id)}><LogOut/></button>}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-    <div>
-      <button onClick={HandleAddUser} className="m-5"> <UserPlus /> </button>
-    </div>
-    {verifAddUser && <div>
-      {availableUsers.map((user: User) => (
-          <li key={user.id}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }} className="m-5">
-              {user.nom} {user.prenom} <button type="button" onClick={() => void handleAddMember(user.id)}><CirclePlus/></button>
-            </div>
-          </li>
-        ))}
-      </div>}
+  return (
+    <>
+      <div>
+        <ul>
+          {uniqueUsers.map((user: User) => (
+            <li key={user.id}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
+                className="m-5"
+              >
+                {!isUrgent && <>{user.nom} {user.prenom}{" "}
+                {user.id === currentuser?.id && (
+                  <>
+                    <UserIcon />
+                    <UserStar />
+                  </>
+                )}
+                {userAdmin
+                  .filter((e) => e.id != currentuser?.id)
+                  .some((admin) => admin.id === user.id) ? (
+                  <>
+                    <UserStar />{" "}
+                    <button onClick={() => void HandleDemoteUser(user.id)}>
+                      {" "}
+                      <ChevronsDown />{" "}
+                    </button>
+                  </>
+                ) : (
+                  user.id !== currentuser?.id && (
+                    <button
+                      type="button"
+                      onClick={() => void HandlePromoteUser(user.id)}
+                    >
+                      <ChevronsUp />
+                    </button>
+                  )
+                )}
+                {user.id !== currentuser?.id && (
+                  <button onClick={() => void handleRemoveUser(user.id)}>
+                    <LogOut />
+                  </button>
+                )}</>}
 
-  </>;
+                {isUrgent && <>{user.nom} {user.prenom}{" "}
+                    <button
+                      type="button"
+                      onClick={() => void HandlePromoteUser(user.id)}
+                    >
+                      <ChevronsUp />
+                    </button>
+                </>}
+                
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <button onClick={HandleAddUser} className="m-5">
+          {" "}
+          <UserPlus />{" "}
+        </button>
+      </div>
+      {verifAddUser && (
+        <div>
+          {availableUsers.map((user: User) => (
+            <li key={user.id}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
+                className="m-5"
+              >
+                {user.nom} {user.prenom}{" "}
+                <button
+                  type="button"
+                  onClick={() => void handleAddMember(user.id)}
+                >
+                  <CirclePlus />
+                </button>
+              </div>
+            </li>
+          ))}
+        </div>
+      )}
+    </>
+  );
 }

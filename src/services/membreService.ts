@@ -394,3 +394,54 @@ export const useRemoveUserByGroupe = ()=>{
 
   return UserAdmin;
 }
+
+export const useDeleteUser = ()=>{
+  const UserAdmin = async (idMembre: string) => {
+    try {
+      const response = await fetch(`${API_URL}/membres/${idMembre}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return UserAdmin;
+}
+
+export const useUpdateMembreToAdminUrgent = ()=>{
+  const UserAdmin = async (idGroupe : string, idMembre: string) => {
+    try {
+      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/promote/urgent`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return UserAdmin;
+}
