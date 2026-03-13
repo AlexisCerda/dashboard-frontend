@@ -6,12 +6,12 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { LogOut } from "lucide-react";
 import ConfirmModal from "../components/ConfirmeModalProps";
-import { useGetAdminUserByGroupe, useRemoveUserByGroupe } from "../services/membreService";
+import { ROLE_ADMIN, useGetUsersByRoleGroupe, useRemoveUserByGroupe } from "../services/membreService";
 import type { User } from "../types/User";
 
 export default function DashboardPage() {
   const context = useContext(AuthContext);
-  const GetUserAdmin = useGetAdminUserByGroupe();
+  const GetUsersByRole = useGetUsersByRoleGroupe();
 
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,8 +23,9 @@ export default function DashboardPage() {
     setErreur("");
     const fetchUser = async () => {
       if (context?.groupeActifId) {
-        const resultatUser: User[] = await GetUserAdmin(
+        const resultatUser: User[] = await GetUsersByRole(
           Number(context.groupeActifId),
+          ROLE_ADMIN,
         );
         setUserAdmin(resultatUser);
         if (resultatUser.length === 0) {
@@ -106,7 +107,7 @@ export default function DashboardPage() {
               onClose={() => setIsModalOpen(false)}
               onConfirm={() => {
                 void handleRemoveUser(context.auth.idUser as number);
-              }}
+              }} 
               title="Qutter le groupe"
               message="Es-tu sûr de vouloir quitter le groupe ?"
             />

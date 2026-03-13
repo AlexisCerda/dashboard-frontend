@@ -1,19 +1,23 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import {
+  ROLE_ADMIN,
+  ROLE_MEMBRE,
   useAddUserByGroupe,
-  useGetAdminUserByGroupe,
+  useGetUsersByRoleGroupe,
   useGetAllUser,
   useGetUserByGroupe,
   useRemoveUserByGroupe,
-  useUpdateAdminToMembre,
-  useUpdateMembreToAdmin,
+  useUpdateMembreRole,
   useUpdateMembreToAdminUrgent,
+  ROLE_INVITE,
 } from "../services/membreService";
 import type { User } from "../types/User";
 import {
+  ChevronDown,
   ChevronsDown,
   ChevronsUp,
+  ChevronUp,
   CirclePlus,
   LogOut,
   User as UserIcon,
@@ -31,15 +35,15 @@ export function UpdateGroupePage() {
   const GetAllUser = useGetAllUser();
   const AddUser = useAddUserByGroupe();
   const RemoveUser = useRemoveUserByGroupe();
-  const GetUserAdmin = useGetAdminUserByGroupe();
-  const UpdateUsertoAdmin = useUpdateMembreToAdmin();
+  const GetUsersByRole = useGetUsersByRoleGroupe();
+  const UpdateMembreRole = useUpdateMembreRole();
   const UpdateUsertoAdminUrgent = useUpdateMembreToAdminUrgent();
-  const UpdateAdmintoUser = useUpdateAdminToMembre();
 
   const [currentuser, setCurrentuser] = useState<User>();
   const [users, setUsers] = useState<User[]>([]);
   const [userAdmin, setUserAdmin] = useState<User[]>([]);
   const [alluser, setAllUser] = useState<User[]>([]);
+  const [userguest, setUserguest] = useState<User[]>([]);
   const [verifAddUser, setVerifAddUser] = useState(false);
   const [isUrgent, setIsUrgent] = useState<boolean>(false);
 
@@ -49,13 +53,15 @@ export function UpdateGroupePage() {
     }
 
     const groupId = Number(context.groupeActifId);
-    const [resultatUser, resultatAdmin] = await Promise.all([
+    const [resultatUser, resultatAdmin, resultatUserguest] = await Promise.all([
       GetUserByGroupe(groupId),
-      GetUserAdmin(groupId),
+      GetUsersByRole(groupId, ROLE_ADMIN),
+      GetUsersByRole(groupId, ROLE_INVITE),
     ]);
 
     setUsers(resultatUser);
     setUserAdmin(resultatAdmin);
+    setUserguest(resultatUserguest)
     setIsUrgent(resultatAdmin.length === 0);
 
     return { resultatUser, resultatAdmin };
@@ -122,8 +128,9 @@ export function UpdateGroupePage() {
   useEffect(() => {
     const fetchUser = async () => {
       if (context?.groupeActifId) {
-        const resultatUser: User[] = await GetUserAdmin(
+        const resultatUser: User[] = await GetUsersByRole(
           Number(context.groupeActifId),
+          ROLE_ADMIN,
         );
         setUserAdmin(resultatUser);
         setIsUrgent(resultatUser.length === 0);
@@ -152,27 +159,57 @@ export function UpdateGroupePage() {
     if (!context?.groupeActifId || context.auth.idUser == null) {
       return;
     }
-    console.log(isUrgent);
-    
-    if(isUrgent){
+
+    if (isUrgent) {
       await UpdateUsertoAdminUrgent(context.groupeActifId, String(userId));
-    }else{
-      await UpdateUsertoAdmin(
+    } else {
+      await UpdateMembreRole(
         context.groupeActifId,
         String(userId),
+        ROLE_ADMIN,
         String(context.auth.idUser),
       );
-      await refreshGroupData();
     }
+
+    await refreshGroupData();
+  }
+
+  async function HandlePromoteMembre(userId: number) {
+    if (!context?.groupeActifId || context.auth.idUser == null) {
+      return;
+    }
+
+    await UpdateMembreRole(
+        context.groupeActifId,
+        String(userId),
+        ROLE_MEMBRE,
+        String(context.auth.idUser),
+      );
+
+    await refreshGroupData();
   }
 
   async function HandleDemoteUser(userId: number) {
     if (!context?.groupeActifId || context.auth.idUser == null) {
       return;
     }
-    await UpdateAdmintoUser(
+    await UpdateMembreRole(
       context.groupeActifId,
       String(userId),
+      ROLE_MEMBRE,
+      String(context.auth.idUser),
+    );
+    await refreshGroupData();
+  }
+
+  async function HandleDemoteMembre(userId: number) {
+    if (!context?.groupeActifId || context.auth.idUser == null) {
+      return;
+    }
+    await UpdateMembreRole(
+      context.groupeActifId,
+      String(userId),
+      ROLE_INVITE,
       String(context.auth.idUser),
     );
     await refreshGroupData();
@@ -226,16 +263,31 @@ export function UpdateGroupePage() {
                       <ChevronsDown />{" "}
                     </button>
                   </>
-                ) : (
-                  user.id !== currentuser?.id && (
+                ) : userguest
+                    .filter((e) => e.id != currentuser?.id)
+                    .some((guest) => guest.id === user.id) ? (
+                  <button
+                      type="button"
+                      onClick={() => void HandlePromoteMembre(user.id)}
+                    >
+                      <ChevronUp />
+                    </button>
+                ) : user.id !== currentuser?.id && (
+                    <>
                     <button
                       type="button"
                       onClick={() => void HandlePromoteUser(user.id)}
                     >
                       <ChevronsUp />
                     </button>
-                  )
-                )}
+                    <button
+                      type="button"
+                      onClick={() => void HandleDemoteMembre(user.id)}
+                    >
+                      <ChevronDown />
+                    </button>
+                    </>
+                  )}
                 {user.id !== currentuser?.id && (
                   <button onClick={() => void handleRemoveUser(user.id)}>
                     <LogOut />
@@ -245,8 +297,7 @@ export function UpdateGroupePage() {
                 {isUrgent && <>{user.nom} {user.prenom}{" "}
                     <button
                       type="button"
-                      onClick={() => void HandlePromoteUser(user.id)}
-                    >
+                      onClick={() => void HandlePromoteUser(user.id)}>
                       <ChevronsUp />
                     </button>
                 </>}

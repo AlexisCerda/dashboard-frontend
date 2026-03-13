@@ -4,6 +4,10 @@ import type { User } from "../pages/UpdateUserPage";
 
 const API_URL = "http://localhost:8080/api";
 
+export const ROLE_INVITE = 0;
+export const ROLE_ADMIN = 1;
+export const ROLE_MEMBRE = 2;
+
 const getStoredToken = (): string | null => {
   const token = localStorage.getItem("sidsic_token");
   if (!token || token === "null" || token === "undefined") {
@@ -190,11 +194,10 @@ export const useUpdatePwdUser = () => {
   return updateUser;
 }
 
-export const useGetAdminUserByGroupe = () => {
-
-  const GetAdminUserByGroupe = async (idGroupe : number) => {
+export const useGetUsersByRoleGroupe = () => {
+  const GetUsersByRoleGroupe = async (idGroupe: number, role: number) => {
     try {
-      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/admin`, {
+      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/role/${role}`, {
         method: "GET",
         headers: getAuthHeaders(),
       });
@@ -212,7 +215,7 @@ export const useGetAdminUserByGroupe = () => {
     }
   };
 
-  return GetAdminUserByGroupe;
+  return GetUsersByRoleGroupe;
 }
 
 export const useGetUserByGroupe = () => {
@@ -326,10 +329,19 @@ export const useAddUserByGroupe = ()=>{
   return AddUser;
 }
 
-export const useUpdateMembreToAdmin = ()=>{
-  const UserAdmin = async (idGroupe : string, idMembre: string, idMembreActuel: string) => {
+export const useUpdateMembreRole = ()=>{
+  const UpdateMembreRole = async (
+    idGroupe: string,
+    idMembre: string,
+    role: number,
+    idMembreActuel: string,
+  ) => {
+    if (![ROLE_INVITE, ROLE_ADMIN, ROLE_MEMBRE].includes(role)) {
+      throw new Error("Rôle invalide");
+    }
+
     try {
-      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/promote/by/${idMembreActuel}`, {
+      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/role/${role}/by/${idMembreActuel}`, {
         method: "PATCH",
         headers: getAuthHeaders(),
       });
@@ -347,31 +359,7 @@ export const useUpdateMembreToAdmin = ()=>{
     }
   };
 
-  return UserAdmin;
-}
-
-export const useUpdateAdminToMembre = ()=>{
-  const UserAdmin = async (idGroupe : string, idMembre: string, idMembreActuel: string) => {
-    try {
-      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/demote/by/${idMembreActuel}`, {
-        method: "PATCH",
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error("Problème server");
-      }
-
-      const data = await response.json();
-      return data;
-
-    } catch (error) {
-      console.error("Erreur :", error);
-      throw error;
-    }
-  };
-
-  return UserAdmin;
+  return UpdateMembreRole;
 }
 
 export const useRemoveUserByGroupe = ()=>{
@@ -423,7 +411,7 @@ export const useDeleteUser = ()=>{
 export const useUpdateMembreToAdminUrgent = ()=>{
   const UserAdmin = async (idGroupe : string, idMembre: string) => {
     try {
-      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/promote/urgent`, {
+      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/role/${ROLE_ADMIN}/urgent`, {
         method: "PATCH",
         headers: getAuthHeaders(),
       });
@@ -471,4 +459,28 @@ export const useCreateGroupe = ()=>{
   };
 
   return CreateGroupe;
+}
+
+export const useGetConfig = ()=>{
+  const GetConfig = async () => {
+    try {
+      const response = await fetch(`${API_URL}/config`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return GetConfig;
 }

@@ -17,6 +17,7 @@ export default function UpdateUserPage() {
   const [password, setPassword] = useState("");
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
+  const [message, setMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const UpdateUser = useUpdateUser();
@@ -53,6 +54,7 @@ export default function UpdateUserPage() {
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
       e.preventDefault();
       setErreur("");
+      setMessage("Ajoute bien pris en compte !")
 
       if(password){
         try {
@@ -72,6 +74,7 @@ export default function UpdateUserPage() {
         }
       } catch (err) {
         setErreur("Email déjà pris ou email invalide");
+        setMessage("");
       }
     };
 
@@ -81,6 +84,11 @@ export default function UpdateUserPage() {
       {erreur && (
         <div className="p-3 bg-red-100 text-red-700 text-sm rounded-lg border border-red-200">
           {erreur}
+        </div>
+      )}
+      {message && (
+        <div className="p-3 bg-green-100 text-green-700 text-sm rounded-lg border border-green-200">
+          {message}
         </div>
       )}
       <div>
