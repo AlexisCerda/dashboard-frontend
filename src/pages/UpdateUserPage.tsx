@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { useDeleteUser, useGetUser, useUpdatePwdUser, useUpdateUser } from "../services/membreService";
-import {TrashIcon } from "lucide-react";
+import { TrashIcon } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmeModalProps";
 
@@ -53,20 +53,25 @@ export default function UpdateUserPage() {
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
       e.preventDefault();
       setErreur("");
-      try {
-        const resultat = await UpdateUser({ nom, prenom, email }) ;
-        console.log("réponse:", resultat);
-      } catch (err) {
-        setErreur("Email déjà pris ou email invalide");
-      }
+
       if(password){
         try {
           const resultat = await UpdatePwdUser(password);
           console.log("réponse PWD :", resultat);
-
         } catch (error) {
           setErreur("Mot de passe invalide");
+          return;
         }
+      }
+
+      try {
+        const resultat = await UpdateUser({ nom, prenom, email });
+        console.log("réponse:", resultat);
+        if (resultat.token && context?.auth.idUser) {
+          context.login(context.auth.idUser, resultat.token);
+        }
+      } catch (err) {
+        setErreur("Email déjà pris ou email invalide");
       }
     };
 

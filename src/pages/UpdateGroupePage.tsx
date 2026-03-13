@@ -250,7 +250,6 @@ export function UpdateGroupePage() {
                       <ChevronsUp />
                     </button>
                 </>}
-                
               </div>
             </li>
           ))}

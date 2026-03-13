@@ -4,6 +4,26 @@ import type { User } from "../pages/UpdateUserPage";
 
 const API_URL = "http://localhost:8080/api";
 
+const getStoredToken = (): string | null => {
+  const token = localStorage.getItem("sidsic_token");
+  if (!token || token === "null" || token === "undefined") {
+    return null;
+  }
+
+  return token;
+};
+
+const getAuthHeaders = (): Record<string, string> => {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
 export const useGetCurrentGroupe = () => {
   const context = useContext(AuthContext);
 
@@ -14,10 +34,7 @@ export const useGetCurrentGroupe = () => {
 
     const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}/groupe-actuel`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        ...(context.auth.token ? { Authorization: `Bearer ${context.auth.token}` } : {}),
-      },
+      headers: getAuthHeaders(),
     });
 
     if (response.status === 401 || response.status === 404) {
@@ -42,9 +59,7 @@ export const useGetGroupesUtilisateur = () => {
     try {
       const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}/groupes`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -70,9 +85,7 @@ export const usePatchCurrentGroupe = () => {
     try {
       const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}/groupe-actuel/${groupeId}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -98,9 +111,7 @@ export const useGetUser = () => {
     try {
       const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -126,9 +137,7 @@ export const useUpdateUser = () => {
     try {
       const response = await fetch(`${API_URL}/membres/`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
         id: context?.auth.idUser,
         nom: u.nom,
@@ -160,10 +169,10 @@ export const useUpdatePwdUser = () => {
     try {
       const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}/pwd`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: pwd,
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+        motDePasse: pwd
+      }),
       });
 
       if (!response.ok) {
@@ -187,9 +196,7 @@ export const useGetAdminUserByGroupe = () => {
     try {
       const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/admin`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -213,9 +220,7 @@ export const useGetUserByGroupe = () => {
     try {
       const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -237,16 +242,14 @@ export const useGetUserByGroupe = () => {
 export const useCreateUser = ()=>{
   const CreateUser = async (pwd : string, u : User ) => {
     try {
-      const response = await fetch(`${API_URL}/membres/${pwd}`, {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-        id: 0,
         nom: u.nom,
         prenom : u.prenom,
-        email : u.email
+        email : u.email,
+        motDePasse: pwd
       }),
       });
 
@@ -254,8 +257,17 @@ export const useCreateUser = ()=>{
         throw new Error("Problème server");
       }
 
-      const data = await response.json();
-      return data;
+      if (response.status === 204) {
+        return null;
+      }
+
+      const contentType = response.headers.get("Content-Type");
+      if (contentType?.includes("application/json")) {
+        const data = await response.json();
+        return data;
+      }
+
+      return null;
 
     } catch (error) {
       console.error("Erreur :", error);
@@ -271,9 +283,7 @@ export const useGetAllUser = ()=>{
     try {
       const response = await fetch(`${API_URL}/membres`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -297,9 +307,7 @@ export const useAddUserByGroupe = ()=>{
     try {
       const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/added-by/${idMembreActuel}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -323,9 +331,7 @@ export const useUpdateMembreToAdmin = ()=>{
     try {
       const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/promote/by/${idMembreActuel}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -349,9 +355,7 @@ export const useUpdateAdminToMembre = ()=>{
     try {
       const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/demote/by/${idMembreActuel}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -375,9 +379,7 @@ export const useRemoveUserByGroupe = ()=>{
     try {
       const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -400,9 +402,7 @@ export const useDeleteUser = ()=>{
     try {
       const response = await fetch(`${API_URL}/membres/${idMembre}`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -425,9 +425,7 @@ export const useUpdateMembreToAdminUrgent = ()=>{
     try {
       const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/promote/urgent`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -444,4 +442,33 @@ export const useUpdateMembreToAdminUrgent = ()=>{
   };
 
   return UserAdmin;
+}
+
+export const useCreateGroupe = ()=>{
+  const CreateGroupe = async (idUser : number, nom : string) => {
+    try {
+      const response = await fetch(`${API_URL}/membres/${idUser}/groupes`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+        id: 0,
+        nom: nom,
+        ville:"",
+      }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return CreateGroupe;
 }

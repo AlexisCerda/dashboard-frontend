@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { UserCog } from 'lucide-react';
+import { SquarePlus, UserCog } from 'lucide-react';
 
 export default function NavBar() {
   const context = useContext(AuthContext);
@@ -55,11 +55,17 @@ export default function NavBar() {
             {context?.isLogged &&(
               <Link
                 to="/update-user"
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-colors 2xl:border-t-8"
-              >
+                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-colors 2xl:border-t-8">
                 <UserCog className="w-5 h-5" />
               </Link>
             )}
+          </div>
+          <div>
+            <Link
+                to="/add-group"
+                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-colors 2xl:border-t-8">
+                <SquarePlus/>
+            </Link>
           </div>
         </div>
       </div>

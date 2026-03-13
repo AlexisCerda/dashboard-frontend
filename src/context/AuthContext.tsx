@@ -1,5 +1,13 @@
 import { createContext, useState, type ReactNode } from 'react';
 
+const normalizeStoredToken = (token: string | null): string | null => {
+  if (!token || token === 'null' || token === 'undefined') {
+    return null;
+  }
+
+  return token;
+};
+
 interface AuthState {
   idUser: number | null;
   token?: string | null;
@@ -19,7 +27,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const [auth, setAuth] = useState<AuthState>(() => {
-    const savedToken = localStorage.getItem('sidsic_token');
+    const savedToken = normalizeStoredToken(localStorage.getItem('sidsic_token'));
     const savedId = localStorage.getItem('sidsic_idUser');
     
     return {
@@ -27,10 +35,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       idUser: savedId ? parseInt(savedId) : null,
     };
   });
-  const isLogged = auth.token !== null;
+  const isLogged = !!auth.token;
 
   const login = (idUser: number, token: string) => {
-    setAuth({ idUser });
+    setAuth({ idUser, token });
     localStorage.setItem('sidsic_token', token);
     localStorage.setItem('sidsic_idUser', idUser.toString());
   };

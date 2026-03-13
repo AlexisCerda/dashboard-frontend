@@ -7,6 +7,7 @@ import NavBar from './components/NavBar';
 import UpdateUserPage from './pages/UpdateUserPage';
 import { UpdateGroupePage } from './pages/UpdateGroupePage';
 import SigninPage from './pages/SigninPage';
+import { AddGroupePage } from './pages/AddGroupePage';
 
 
 
@@ -31,6 +32,11 @@ function App() {
         <Route path='/update-group' element={
           <ProtectedRoute>
             <UpdateGroupePage/>
+          </ProtectedRoute>
+        }></Route>
+        <Route path='/add-group' element={
+          <ProtectedRoute>
+            <AddGroupePage/>
           </ProtectedRoute>
         }></Route>
         <Route path='*' element={

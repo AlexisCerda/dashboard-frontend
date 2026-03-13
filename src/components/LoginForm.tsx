@@ -16,10 +16,14 @@ export default function LoginForm() {
 
     try {
       const resultat = await loginAgent(email, password);
-      console.log("réponse:", resultat);
-      if(authContext && resultat.id){
-        authContext.login(resultat.id, "null");
+      console.log("réponse utilisateur:", resultat.utilisateur);
+      const idUser = resultat.utilisateur?.id ?? resultat.utilisateur?.idUser ?? resultat.utilisateur?.idMembre;
+      if(authContext && resultat.token && idUser){
+        authContext.login(idUser, resultat.token);
         window.location.href ="/dashboard";
+      } else {
+        console.error("Champ ID introuvable dans la réponse:", resultat.utilisateur);
+        setErreur("Erreur de connexion : réponse serveur invalide.");
       }
     } catch (err) {
       setErreur("Identifiants incorrects ou serveur injoignable.");

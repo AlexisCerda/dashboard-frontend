@@ -18,7 +18,12 @@ export const loginAgent = async (email: string, motDePasse: string) => {
     }
 
     const data = await response.json();
-    return data;
+
+    if (data.token) {
+      localStorage.setItem("sidsic_token", data.token);
+    }
+
+    return { utilisateur: data.utilisateur, token: data.token };
 
   } catch (error) {
     console.error("Erreur de connexion :", error);

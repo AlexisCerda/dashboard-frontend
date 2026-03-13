@@ -25,10 +25,10 @@ export default function SigninPage() {
       try {
         const resultat = await CreateUser(password,{ nom, prenom, email }) ;
         console.log("réponse:", resultat);
+        navigate("/login");
       } catch (error) {
         setErreur("Email invalide, ou déjà prise");
       }
-      navigate("/login");
     };
 
   return (
@@ -109,7 +109,7 @@ export default function SigninPage() {
         type="submit"
         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200"
       >
-        Changer
+        M'inscrire
       </button>
     </form>
   );

@@ -1,13 +1,12 @@
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { useGetCurrentGroupe, useGetGroupesUtilisateur, usePatchCurrentGroupe } from "../services/membreService";
+import { useGetGroupesUtilisateur, usePatchCurrentGroupe } from "../services/membreService";
 
 export default function SelectGroupe() {
-  const context = useContext(AuthContext); 
+  const context = useContext(AuthContext);
   const [groupes, setGroupes] = useState<any[]>([]);
   const [isGroupesLoaded, setIsGroupesLoaded] = useState(false);
 
-  const getCurrentGroupe = useGetCurrentGroupe();
   const getGroupesUtilisateur = useGetGroupesUtilisateur();
   const patchCurrentGroupe = usePatchCurrentGroupe();
 
@@ -17,14 +16,26 @@ export default function SelectGroupe() {
         const listeGroupes = await getGroupesUtilisateur();
         setGroupes(listeGroupes);
 
-        try {
-          const groupeActuel = await getCurrentGroupe();
+        const rawToken = context?.auth.token ?? localStorage.getItem("sidsic_token");
+        const canRequestCurrentGroupe = !!rawToken && rawToken !== "null";
 
-          if (groupeActuel && groupeActuel.id && !context?.groupeActifId) {
-            context?.setGroupeActifId(String(groupeActuel.id));
+        if (!canRequestCurrentGroupe || listeGroupes.length === 0) {
+          return;
+        }
+
+        const groupeActifExisteDansListe = listeGroupes.some(
+          (g: { id: string | number }) => String(g.id) === context?.groupeActifId
+        );
+
+        if (!groupeActifExisteDansListe) {
+          const premierGroupeId = Number(listeGroupes[0].id);
+          context?.setGroupeActifId(String(premierGroupeId));
+
+          try {
+            await patchCurrentGroupe(premierGroupeId);
+          } catch {
+            // Le backend peut refuser ponctuellement: on garde l'état local pour éviter de bloquer l'UI.
           }
-        } catch {
-          // Cas normal: l'utilisateur peut ne pas avoir de groupe actif.
         }
       } catch (error) {
         console.error("Erreur lors de la récupération des groupes:", error);
