@@ -76,15 +76,6 @@ export default function NavBar() {
           </div>
           <div>
             {context?.isLogged &&(
-            <Link
-                to="/add-group"
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-colors 2xl:border-t-8">
-                <SquarePlus/>
-            </Link>) 
-            }
-          </div>
-          <div>
-            {context?.isLogged &&(
               
               <Link
                 to="/update-user"

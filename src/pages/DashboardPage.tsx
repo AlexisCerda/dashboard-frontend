@@ -4,19 +4,35 @@ import SelectGroupe from "../components/SelectGroupe";
 import { ButtonAdminGroupe } from "../components/ButtonAdminGroupe";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
-import { LogOut } from "lucide-react";
+import { LogOut, SquarePlus } from "lucide-react";
 import ConfirmModal from "../components/ConfirmeModalProps";
-import { ROLE_ADMIN, useGetUsersByRoleGroupe, useRemoveUserByGroupe } from "../services/membreService";
+import {
+  ROLE_ADMIN,
+  useGetUsersByRoleGroupe,
+  useRemoveUserByGroupe,
+} from "../services/membreService";
 import type { User } from "../types/User";
+import { Link } from "react-router-dom";
+import { Responsive, WidthProvider } from "react-grid-layout/legacy";
+import "react-grid-layout/css/styles.css";
+import "react-resizable/css/styles.css";
+import WidgetTaches from "../components/Widgets/WidgetTache";
 
+const ResponsiveGridLayout = WidthProvider(Responsive);
 export default function DashboardPage() {
   const context = useContext(AuthContext);
   const GetUsersByRole = useGetUsersByRoleGroupe();
+  const defaultLayout = [
+    { i: "taches", x: 0, y: 0, w: 4, h: 4 },
+    { i: "taches2", x: 4, y: 0, w: 4, h: 4 },
+    { i: "taches3", x: 8, y: 0, w: 4, h: 4 },
+  ];
 
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [erreur, setErreur] = useState("");
   const [userAdmin, setUserAdmin] = useState<User[]>([]);
+  const [layout, setLayout] = useState(defaultLayout);
   const RemoveUser = useRemoveUserByGroupe();
 
   useEffect(() => {
@@ -29,13 +45,14 @@ export default function DashboardPage() {
         );
         setUserAdmin(resultatUser);
         if (resultatUser.length === 0) {
-          setErreur("Mode Urgence activé. Il n'y a aucun Admin dans le groupe. Veuillez en mettre un !");
+          setErreur(
+            "Mode Urgence activé. Il n'y a aucun Admin dans le groupe. Veuillez en mettre un !",
+          );
         }
       }
     };
     fetchUser();
   }, [context?.groupeActifId]);
-
 
   useEffect(() => {
     if (!context?.groupeActifId || context.auth.idUser == null) {
@@ -76,44 +93,90 @@ export default function DashboardPage() {
     }
   }
 
+  const onLayoutChange = (newLayout: any) => {
+    setLayout(newLayout);
+  };
+
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Mon Tableau de Bord</h1>
-
-      {erreur && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 text-sm rounded-lg border border-red-200">
-          {erreur}
-        </div>
-      )}
-
-      <p className="mb-4 text-gray-600">
-        Affichage des données pour le groupe ID :
-        <span className="font-bold text-blue-600">
-          {" "}
-          {context?.groupeActifId}
-        </span>
-      </p>
-
-      <div className="flex gap-4">
+    <div className="flex flex-col h-full w-full bg-slate-50 overflow-hidden text-sm">
+      <header className="flex items-center gap-3 p-3 bg-white border-b border-gray-200 shadow-sm z-10 shrink-0">
         <SelectGroupe key={`select-${refreshVersion}`} />
         <ButtonAdminGroupe key={`admin-${refreshVersion}`} />
+
         {context?.auth.idUser != null && (
           <>
-            <button className="m-5" onClick={() => setIsModalOpen(true)}>
-              <LogOut />
+            <button
+              className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+              onClick={() => setIsModalOpen(true)}
+              title="Quitter le groupe"
+            >
+              <LogOut size={20} />
             </button>
+
             <ConfirmModal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-              onConfirm={() => {
-                void handleRemoveUser(context.auth.idUser as number);
-              }} 
-              title="Qutter le groupe"
+              onConfirm={() =>
+                void handleRemoveUser(context.auth.idUser as number)
+              }
+              title="Quitter le groupe"
               message="Es-tu sûr de vouloir quitter le groupe ?"
             />
           </>
         )}
-      </div>
+        <div>
+          {context?.isLogged && (
+            <Link
+              to="/add-group"
+              className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-colors 2xl:border-t-8"
+            >
+              <SquarePlus />
+            </Link>
+          )}
+        </div>
+
+        {erreur && (
+          <div className="ml-auto px-4 py-1 bg-red-100 text-red-700 rounded-md border border-red-200 font-medium">
+            {erreur}
+          </div>
+        )}
+      </header>
+
+    <main className="flex-1 overflow-auto relative p-4 bg-slate-100" id="widget-desktop">      
+      <ResponsiveGridLayout
+        className="layout"
+        layouts={{ lg: layout }} 
+        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+        cols={{ lg: 24, md: 10, sm: 6, xs: 4, xxs: 2 }} 
+        rowHeight={60} 
+        onLayoutChange={onLayoutChange}
+        draggableHandle=".drag-handle"
+        margin={[16, 16]}
+        compactType={null}
+        preventCollision={true}
+      >
+        <div key="taches">
+          <WidgetTaches />
+        </div>
+        <div key="taches2">
+          <WidgetTaches />
+        </div>
+        <div key="taches3">
+          <WidgetTaches />
+        </div>
+
+      </ResponsiveGridLayout>
+
+    </main>
+
+      <footer className="h-10 bg-gray-200 border-t border-gray-300 flex items-end px-2 shrink-0 gap-1 overflow-x-auto select-none">
+        <div className="bg-white border-t-2 border-green-600 px-4 py-1.5 rounded-t-sm shadow-sm cursor-default flex items-center gap-2">
+          <span className="font-semibold text-gray-800">Vue Principale</span>
+        </div>
+        <button className="px-3 py-1.5 text-gray-600 hover:text-black hover:bg-gray-300 rounded-t-sm font-bold ml-1">
+          +
+        </button>
+      </footer>
     </div>
   );
 }
