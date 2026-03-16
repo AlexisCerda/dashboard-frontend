@@ -545,3 +545,76 @@ export const useGetGroupesByUser = () => {
 
   return getGroupesUtilisateur;
 };
+
+export const useGetDateLastCoByUser = () => {
+
+  const getDateLastCo = async (idUser : number ) => {
+    try {
+      const response = await fetch(`${API_URL}/membres/${idUser}/last-co`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error("L'utilisateur n'existe pas");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return getDateLastCo;
+};
+
+export const useGetAllGroupes = () => {
+
+  const GetAllGroupes = async () => {
+    try {
+      const response = await fetch(`${API_URL}/groupes`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error("Le groupe n'existe pas");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return GetAllGroupes;
+};
+
+export const useDeleteGroupe = ()=>{
+  const DeleteGroupe = async (idGroupe: string) => {
+    try {
+      const response = await fetch(`${API_URL}/groupes/${idGroupe}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return DeleteGroupe;
+}

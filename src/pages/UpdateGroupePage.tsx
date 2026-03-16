@@ -239,7 +239,7 @@ export function UpdateGroupePage() {
   }
 
   const filteredUsers = availableUsers.filter((user: User) => {
-    const fullName = `${user.nom} ${user.prenom}`.toLowerCase();
+    const fullName = `${user.nom} ${user.prenom} ${user.id}`.toLowerCase();
     return fullName.includes(searchTerm.toLowerCase());
   });
   return (
@@ -352,7 +352,7 @@ export function UpdateGroupePage() {
                   }}
                   className="m-5"
                 >
-                  {user.nom} {user.prenom}{" "}
+                  {user.nom} {user.prenom} : id = {user.id}{" "}
                   <button
                     type="button"
                     onClick={() => void handleAddMember(user.id)}
