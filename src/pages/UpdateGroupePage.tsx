@@ -46,6 +46,7 @@ export function UpdateGroupePage() {
   const [userguest, setUserguest] = useState<User[]>([]);
   const [verifAddUser, setVerifAddUser] = useState(false);
   const [isUrgent, setIsUrgent] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   async function refreshGroupData() {
     if (!context?.groupeActifId) {
@@ -61,7 +62,7 @@ export function UpdateGroupePage() {
 
     setUsers(resultatUser);
     setUserAdmin(resultatAdmin);
-    setUserguest(resultatUserguest)
+    setUserguest(resultatUserguest);
     setIsUrgent(resultatAdmin.length === 0);
 
     return { resultatUser, resultatAdmin };
@@ -180,11 +181,11 @@ export function UpdateGroupePage() {
     }
 
     await UpdateMembreRole(
-        context.groupeActifId,
-        String(userId),
-        ROLE_MEMBRE,
-        String(context.auth.idUser),
-      );
+      context.groupeActifId,
+      String(userId),
+      ROLE_MEMBRE,
+      String(context.auth.idUser),
+    );
 
     await refreshGroupData();
   }
@@ -236,6 +237,11 @@ export function UpdateGroupePage() {
     await RemoveUser(context.groupeActifId, String(userId));
     await refreshGroupData();
   }
+
+  const filteredUsers = availableUsers.filter((user: User) => {
+    const fullName = `${user.nom} ${user.prenom}`.toLowerCase();
+    return fullName.includes(searchTerm.toLowerCase());
+  });
   return (
     <>
       <div>
@@ -246,61 +252,75 @@ export function UpdateGroupePage() {
                 style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
                 className="m-5"
               >
-                {!isUrgent && <>{user.nom} {user.prenom}{" "}
-                {user.id === currentuser?.id && (
+                {!isUrgent && (
                   <>
-                    <UserIcon />
-                    <UserStar />
+                    {user.nom} {user.prenom}{" "}
+                    {user.id === currentuser?.id && (
+                      <>
+                        <UserIcon />
+                        <UserStar />
+                      </>
+                    )}
+                    {userAdmin
+                      .filter((e) => e.id != currentuser?.id)
+                      .some((admin) => admin.id === user.id) ? (
+                      <>
+                        <UserStar />{" "}
+                        <button onClick={() => void HandleDemoteUser(user.id)}>
+                          {" "}
+                          <ChevronsDown />{" "}
+                        </button>
+                      </>
+                    ) : userguest
+                        .filter((e) => e.id != currentuser?.id)
+                        .some((guest) => guest.id === user.id) ? (
+                      <>
+                        <span>: Invité</span>
+                        <button
+                          type="button"
+                          onClick={() => void HandlePromoteMembre(user.id)}
+                        >
+                          <ChevronUp />
+                        </button>
+                      </>
+                    ) : (
+                      user.id !== currentuser?.id && (
+                        <>
+                          <span>: Membre</span>
+                          <button
+                            type="button"
+                            onClick={() => void HandlePromoteUser(user.id)}
+                          >
+                            <ChevronsUp />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void HandleDemoteMembre(user.id)}
+                          >
+                            <ChevronDown />
+                          </button>
+                        </>
+                      )
+                    )}
+                    {user.id !== currentuser?.id && (
+                      <button onClick={() => void handleRemoveUser(user.id)}>
+                        <LogOut />
+                      </button>
+                    )}
                   </>
                 )}
-                {userAdmin
-                  .filter((e) => e.id != currentuser?.id)
-                  .some((admin) => admin.id === user.id) ? (
+
+                {isUrgent && (
                   <>
-                    <UserStar />{" "}
-                    <button onClick={() => void HandleDemoteUser(user.id)}>
-                      {" "}
-                      <ChevronsDown />{" "}
-                    </button>
-                  </>
-                ) : userguest
-                    .filter((e) => e.id != currentuser?.id)
-                    .some((guest) => guest.id === user.id) ? (
-                  <button
-                      type="button"
-                      onClick={() => void HandlePromoteMembre(user.id)}
-                    >
-                      <ChevronUp />
-                    </button>
-                ) : user.id !== currentuser?.id && (
-                    <>
+                    {user.nom} {user.prenom}{" "}
                     <button
                       type="button"
                       onClick={() => void HandlePromoteUser(user.id)}
                     >
                       <ChevronsUp />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => void HandleDemoteMembre(user.id)}
-                    >
-                      <ChevronDown />
-                    </button>
-                    </>
-                  )}
-                {user.id !== currentuser?.id && (
-                  <button onClick={() => void handleRemoveUser(user.id)}>
-                    <LogOut />
-                  </button>
-                )}</>}
-
-                {isUrgent && <>{user.nom} {user.prenom}{" "}
-                    <button
-                      type="button"
-                      onClick={() => void HandlePromoteUser(user.id)}>
-                      <ChevronsUp />
-                    </button>
-                </>}
+                  </>
+                )}
               </div>
             </li>
           ))}
@@ -314,22 +334,41 @@ export function UpdateGroupePage() {
       </div>
       {verifAddUser && (
         <div>
-          {availableUsers.map((user: User) => (
-            <li key={user.id}>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
-                className="m-5"
-              >
-                {user.nom} {user.prenom}{" "}
-                <button
-                  type="button"
-                  onClick={() => void handleAddMember(user.id)}
+          <input
+            type="text"
+            placeholder="Rechercher par nom ou prénom..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border p-2 rounded w-full mb-4"
+          />
+          <ul>
+            {filteredUsers.map((user: User) => (
+              <li key={user.id}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.4rem",
+                  }}
+                  className="m-5"
                 >
-                  <CirclePlus />
-                </button>
-              </div>
-            </li>
-          ))}
+                  {user.nom} {user.prenom}{" "}
+                  <button
+                    type="button"
+                    onClick={() => void handleAddMember(user.id)}
+                  >
+                    <CirclePlus />
+                  </button>
+                </div>
+              </li>
+            ))}
+
+            {filteredUsers.length === 0 && (
+              <li className="text-gray-500 m-5 italic">
+                Aucun utilisateur trouvé pour "{searchTerm}".
+              </li>
+            )}
+          </ul>
         </div>
       )}
     </>

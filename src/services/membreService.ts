@@ -484,3 +484,64 @@ export const useGetConfig = ()=>{
 
   return GetConfig;
 }
+
+export const useUpdateConfig = ()=>{
+  const UpdateConfig = async (emailAdmin : string, maxTaches : number, maxGroupes : number, maxNotes : number, maxMouvements : number, maxAchats : number, maxPrets : number) => {
+    try {
+      const response = await fetch(`${API_URL}/config`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+        emailAdmin : emailAdmin,
+        maxTaches : maxTaches,
+        maxGroupes : maxGroupes,
+        maxNotes : maxNotes,
+        maxMouvements : maxMouvements,
+        maxAchats : maxAchats,
+        maxPrets : maxPrets
+      }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      const contentType = response.headers.get("Content-Type");
+      if (contentType?.includes("application/json")) {
+        return await response.json();
+      }
+
+      return await response.text();
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return UpdateConfig;
+}
+export const useGetGroupesByUser = () => {
+
+  const getGroupesUtilisateur = async (idUser : number ) => {
+    try {
+      const response = await fetch(`${API_URL}/membres/${idUser}/groupes`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error("L'utilisateur n'existe pas");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return getGroupesUtilisateur;
+};

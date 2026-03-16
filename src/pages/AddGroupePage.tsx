@@ -1,16 +1,44 @@
-import { useContext, useState } from "react";
-import { useCreateGroupe } from "../services/membreService";
+import { useContext, useEffect, useState } from "react";
+import { useCreateGroupe, useGetConfig, useGetGroupesUtilisateur } from "../services/membreService";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export function AddGroupePage(){
 
   const CreateGroupe = useCreateGroupe();
+  const GetConfig = useGetConfig();
+  const GetGroupe = useGetGroupesUtilisateur();
   const context = useContext(AuthContext);
   const navigate = useNavigate();
-
   const [nom, setNom] = useState("");
   const [erreur, setErreur] = useState("");
+  const [nombreGroupe, setNombreGroupe] = useState(0);
+  const [maxGroupe, setMaxGroupe] = useState(0);
+
+  useEffect(() => {
+      const fetchUser = async () => {
+        setNombreGroupe(0);
+        try {
+          const resultatGroupe = await GetGroupe();
+          resultatGroupe.forEach(() => setNombreGroupe(nombreGroupe + 1))
+        } catch (err) {
+          setErreur("le groupes ou l'utilisateur n'existe pas");
+        }
+      };
+      fetchUser();
+    }, []);
+
+  useEffect(() => {
+      const fetchUser = async () => {
+        try {
+          const resultatConfig = await GetConfig();
+          setMaxGroupe(resultatConfig.maxGroupes);
+        } catch (err) {
+          setErreur("l'utilisateur n'existe pas");
+        }
+      };
+      fetchUser();
+    }, []);
 
   const  handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -20,7 +48,12 @@ export function AddGroupePage(){
       setErreur("Utilisateur non authentifié.");
       return;
     }
-
+    console.log(nombreGroupe + " " + maxGroupe);
+    
+    if (nombreGroupe >= maxGroupe) {
+      setErreur("Vous avez atteint le nombre maximum de groupes.");
+      return;
+    }
     try {
       await CreateGroupe(context.auth.idUser, nom);
       navigate("/dashboard");
