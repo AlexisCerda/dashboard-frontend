@@ -66,15 +66,6 @@ export default function NavBar() {
             )}
           </div>
           <div>
-            {context?.isLogged &&(
-              <Link
-                to="/update-user"
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-colors 2xl:border-t-8">
-                <UserCog className="w-5 h-5" />
-              </Link>
-            )}
-          </div>
-          <div>
             {context?.isLogged&&emailAdmin === emailUser &&(
               <Link
                 to="/admin"
@@ -84,12 +75,26 @@ export default function NavBar() {
             )}
           </div>
           <div>
+            {context?.isLogged &&(
             <Link
                 to="/add-group"
                 className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-colors 2xl:border-t-8">
                 <SquarePlus/>
-            </Link>
+            </Link>) 
+            }
           </div>
+          <div>
+            {context?.isLogged &&(
+              
+              <Link
+                to="/update-user"
+                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-colors 2xl:border-t-8">
+                <UserCog className="w-5 h-5" />
+              </Link>
+            )}
+          </div>
+          
+          
         </div>
       </div>
     </nav>

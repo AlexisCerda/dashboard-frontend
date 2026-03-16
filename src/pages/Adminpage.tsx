@@ -111,7 +111,10 @@ export default function AdminPage() {
         setErreur("le groupes ou l'utilisateur n'existe pas");
       }
     };
-    fetchUser();
+
+    useEffect(() => {
+      fetchUser();
+    }, []);
 
   
 
