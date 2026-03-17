@@ -8,8 +8,12 @@ import { LogOut, SquarePlus } from "lucide-react";
 import ConfirmModal from "../components/ConfirmeModalProps";
 import {
   ROLE_ADMIN,
+  useCreateConfiguration,
+  useDeleteConfiguration,
+  useGetConfiguration,
   useGetUsersByRoleGroupe,
   useRemoveUserByGroupe,
+  useUpdateConfiguration,
 } from "../services/membreService";
 import type { User } from "../types/User";
 import { Link } from "react-router-dom";
@@ -17,23 +21,59 @@ import { Responsive, WidthProvider } from "react-grid-layout/legacy";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import WidgetTaches from "../components/Widgets/WidgetTache";
+import WidgetNotes from "../components/Widgets/WidgetNotes";
+import WidgetAchats from "../components/Widgets/WidgetAchats";
+import WidgetPrets from "../components/Widgets/WidgetPrets";
+import WidgetMouvements from "../components/Widgets/WidgetMouvement";
+import type { Configuration } from "../types/Configuration";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 export default function DashboardPage() {
   const context = useContext(AuthContext);
   const GetUsersByRole = useGetUsersByRoleGroupe();
-  const defaultLayout = [
-    { i: "taches", x: 0, y: 0, w: 4, h: 4 },
-    { i: "taches2", x: 4, y: 0, w: 4, h: 4 },
-    { i: "taches3", x: 8, y: 0, w: 4, h: 4 },
-  ];
+  const GetConfig = useGetConfiguration();
+  const UpdateConfig = useUpdateConfiguration();
+  const DeleteConfig = useDeleteConfiguration();
+  const CreateConfig = useCreateConfiguration();
 
+  const Widgets : string[] = ["Taches", "Notes", "Achats", "Prets", "Mouvements", "Image1"];
+  const [configCurrent, setConfigCurrent] = useState<number | null>(null);
+  const [configs, setConfigs] = useState<Configuration[]>([]);
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [erreur, setErreur] = useState("");
   const [userAdmin, setUserAdmin] = useState<User[]>([]);
-  const [layout, setLayout] = useState(defaultLayout);
   const RemoveUser = useRemoveUserByGroupe();
+
+  const [layout, setLayout] = useState<any[]>([]);
+  const SaveLayoutBD = async (nouveauLayout: any) => {
+    try {
+      await UpdateConfig(nouveauLayout); 
+      console.log("Configuration sauvegardée en base de données !");
+    } catch (erreur) {
+      console.error("Erreur lors de la sauvegarde du layout :", erreur);
+    }
+  };
+
+  const onLayoutChange = (newLayout: any) => {
+    setLayout(newLayout);
+  };
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      if (context?.groupeActifId) {
+        const resultatConfig: Configuration[] = await GetConfig();
+        if (resultatConfig.length === 0) {
+          setConfigCurrent(null);
+          setConfigs([]);
+        } else {
+          setConfigCurrent(resultatConfig[0].id);
+          setConfigs(resultatConfig);
+        }
+      }
+    };
+    fetchConfig();
+  }, [context?.groupeActifId]);
 
   useEffect(() => {
     setErreur("");
@@ -93,10 +133,6 @@ export default function DashboardPage() {
     }
   }
 
-  const onLayoutChange = (newLayout: any) => {
-    setLayout(newLayout);
-  };
-
   return (
     <div className="flex flex-col h-full w-full bg-slate-50 overflow-hidden text-sm">
       <header className="flex items-center gap-3 p-3 bg-white border-b border-gray-200 shadow-sm z-10 shrink-0">
@@ -112,7 +148,6 @@ export default function DashboardPage() {
             >
               <LogOut size={20} />
             </button>
-
             <ConfirmModal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
@@ -150,29 +185,35 @@ export default function DashboardPage() {
         cols={{ lg: 24, md: 10, sm: 6, xs: 4, xxs: 2 }} 
         rowHeight={60} 
         onLayoutChange={onLayoutChange}
+        onDragStop={(layoutActuel) => SaveLayoutBD(layoutActuel)}
+        onResizeStop={(layoutActuel) => SaveLayoutBD(layoutActuel)}
         draggableHandle=".drag-handle"
         margin={[16, 16]}
         compactType={null}
         preventCollision={true}
+        maxRows={22}
       >
-        <div key="taches">
-          <WidgetTaches />
-        </div>
-        <div key="taches2">
-          <WidgetTaches />
-        </div>
-        <div key="taches3">
-          <WidgetTaches />
-        </div>
+
+        {layout && (layout.map((item) => (
+          <div key={item.i}>
+            {item.i === "Taches" && <WidgetTaches />}
+            {item.i === "Notes" && <WidgetNotes />}
+            {item.i === "Achats" && <WidgetAchats />}
+            {item.i === "Prets" && <WidgetPrets />}
+            {item.i === "Mouvements" && <WidgetMouvements />}
+          </div>
+        )))}
 
       </ResponsiveGridLayout>
 
     </main>
 
       <footer className="h-10 bg-gray-200 border-t border-gray-300 flex items-end px-2 shrink-0 gap-1 overflow-x-auto select-none">
-        <div className="bg-white border-t-2 border-green-600 px-4 py-1.5 rounded-t-sm shadow-sm cursor-default flex items-center gap-2">
-          <span className="font-semibold text-gray-800">Vue Principale</span>
-        </div>
+        {configs.map((config) => (
+          <div className="bg-white border-t-2 border-green-600 px-4 py-1.5 rounded-t-sm shadow-sm cursor-default flex items-center gap-2">
+            <span className="font-semibold text-gray-800">{config.nom}</span>
+          </div>
+        ))}
         <button className="px-3 py-1.5 text-gray-600 hover:text-black hover:bg-gray-300 rounded-t-sm font-bold ml-1">
           +
         </button>

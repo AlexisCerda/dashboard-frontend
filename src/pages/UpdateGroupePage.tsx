@@ -64,6 +64,7 @@ export function UpdateGroupePage() {
     setUserAdmin(resultatAdmin);
     setUserguest(resultatUserguest);
     setIsUrgent(resultatAdmin.length === 0);
+    
 
     return { resultatUser, resultatAdmin };
   }
@@ -242,6 +243,10 @@ export function UpdateGroupePage() {
     const fullName = `${user.nom} ${user.prenom} ${user.id}`.toLowerCase();
     return fullName.includes(searchTerm.toLowerCase());
   });
+  useEffect(() => {
+    refreshGroupData();
+  }, [userguest]);
+  
   return (
     <>
       <div>

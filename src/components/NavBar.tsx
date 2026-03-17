@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { SquarePlus, UserCog, UserStar } from 'lucide-react';
+import { Dog, SquarePlus, UserCog, UserStar } from 'lucide-react';
 import { useGetConfig, useGetUser } from '../services/membreService';
 
 export default function NavBar() {
@@ -73,7 +73,7 @@ export default function NavBar() {
                 <UserStar className="w-5 h-5" />
               </Link>
             )}
-          </div>
+          </div>          
           <div>
             {context?.isLogged &&(
               

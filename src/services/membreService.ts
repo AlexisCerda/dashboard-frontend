@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import type { User } from "../pages/UpdateUserPage";
+import type { Configuration } from "../types/Configuration";
 
 const API_URL = "http://localhost:8080/api";
 
@@ -618,3 +619,126 @@ export const useDeleteGroupe = ()=>{
 
   return DeleteGroupe;
 }
+
+
+export const useGetConfiguration = ()=>{
+  const context = useContext(AuthContext);
+  const GetConfig = async () => {
+    try {
+      if (!context?.groupeActifId || context.auth.idUser == null) {
+        throw new Error("Problème server");
+      }
+      const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/membres/${context.auth.idUser}/configurations`, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      if (response.status === 404) {
+        return [];
+      }
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      if (error == "404") {
+        return [];
+      }
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return GetConfig;
+}
+export const useUpdateConfiguration = ()=>{
+  const UpdateConfig = async (configuration : Configuration) => {
+    try {
+      const response = await fetch(`${API_URL}/configuration`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+        id : configuration.id,
+        idMembre : configuration.idMembre,
+        idGroupe : configuration.idGroupe,
+        taches : configuration.taches,
+        notes : configuration.notes,
+        achats : configuration.achats,
+        prets : configuration.prets,
+        mouvements : configuration.mouvements,
+        nom : configuration.nom 
+      }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      const contentType = response.headers.get("Content-Type");
+      if (contentType?.includes("application/json")) {
+        return await response.json();
+      }
+
+      return await response.text();
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return UpdateConfig;
+}
+export const useDeleteConfiguration = ()=>{
+  const DeleteConfig = async (idConfiguration: number) => {
+    try {
+      const response = await fetch(`${API_URL}/configuration/${idConfiguration}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error("Problème server");
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return DeleteConfig;
+}
+export const useCreateConfiguration = ()=>{
+  const context = useContext(AuthContext);
+  const CreateConfiguration = async () => {
+    try {
+      if (!context?.groupeActifId || context.auth.idUser == null) {
+        throw new Error("Problème serveur");
+      }
+      const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/membres/${context.auth.idUser}/configurations`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      }); 
+
+      if (!response.ok) {
+        throw new Error("Problème serveur");
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Erreur :", error);
+      throw error;
+    }
+  };
+
+  return CreateConfiguration;
+}
+
