@@ -79,15 +79,15 @@ export default function AdminPage() {
 
   useEffect(() => {
     getConfig().then((data) => {
-      setEmailAdmin(data.emailAdmin);
-      setMaxTaches(data.maxTaches);
-      setMaxGroupes(data.maxGroupes);
-      setMaxNotes(data.maxNotes);
-      setMaxMouvements(data.maxMouvements);
-      setMaxAchats(data.maxAchats);
-      setMaxPrets(data.maxPrets);
-      setMaxConfigurations(data.maxConfigurations);
-      setMaxImages(data.maxImages);
+      setEmailAdmin(data.emailAdmin ?? "");
+      setMaxTaches(data.maxTaches ?? 0);
+      setMaxGroupes(data.maxGroupes ?? 0);
+      setMaxNotes(data.maxNotes ?? 0);
+      setMaxMouvements(data.maxMouvements ?? 0);
+      setMaxAchats(data.maxAchats ?? 0);
+      setMaxPrets(data.maxPrets ?? 0);
+      setMaxConfigurations(data.maxConfigurations ?? 0);
+      setMaxImages(data.maxImages ?? 0);
     });
   }, []);
 
@@ -129,8 +129,6 @@ export default function AdminPage() {
   ) => {
     e.preventDefault();
 
-    const nouvelleConfig = { emailAdmin, maxTaches, maxGroupes };
-
     try {
       await updateConfig(
         emailAdmin,
@@ -140,6 +138,8 @@ export default function AdminPage() {
         maxMouvements,
         maxAchats,
         maxPrets,
+        maxConfigurations,
+        maxImages,
       );
       alert("Configuration mise à jour avec succès !");
     } catch (error) {
@@ -206,7 +206,7 @@ export default function AdminPage() {
                 </label>
                 <input
                   type="number"
-                  value={value}
+                  value={value ?? 0}
                   onChange={(e) => tabFonct[index](Number(e.target.value))}
                   className="w-full border p-2 rounded"
                 />

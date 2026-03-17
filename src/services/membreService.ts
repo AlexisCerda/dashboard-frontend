@@ -487,7 +487,7 @@ export const useGetConfig = ()=>{
 }
 
 export const useUpdateConfig = ()=>{
-  const UpdateConfig = async (emailAdmin : string, maxTaches : number, maxGroupes : number, maxNotes : number, maxMouvements : number, maxAchats : number, maxPrets : number) => {
+  const UpdateConfig = async (emailAdmin : string, maxTaches : number, maxGroupes : number, maxNotes : number, maxMouvements : number, maxAchats : number, maxPrets : number, maxConfigurations : number, maxImages : number) => {
     try {
       const response = await fetch(`${API_URL}/config`, {
         method: "PUT",
@@ -499,7 +499,9 @@ export const useUpdateConfig = ()=>{
         maxNotes : maxNotes,
         maxMouvements : maxMouvements,
         maxAchats : maxAchats,
-        maxPrets : maxPrets
+        maxPrets : maxPrets,
+        maxConfigurations : maxConfigurations,
+        maxImages : maxImages
       }),
       });
 
@@ -644,9 +646,6 @@ export const useGetConfiguration = ()=>{
       return data;
 
     } catch (error) {
-      if (error == "404") {
-        return [];
-      }
       console.error("Erreur :", error);
       throw error;
     }
@@ -657,7 +656,7 @@ export const useGetConfiguration = ()=>{
 export const useUpdateConfiguration = ()=>{
   const UpdateConfig = async (configuration : Configuration) => {
     try {
-      const response = await fetch(`${API_URL}/configuration`, {
+      const response = await fetch(`${API_URL}/configurations`, {
         method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -695,7 +694,7 @@ export const useUpdateConfiguration = ()=>{
 export const useDeleteConfiguration = ()=>{
   const DeleteConfig = async (idConfiguration: number) => {
     try {
-      const response = await fetch(`${API_URL}/configuration/${idConfiguration}`, {
+      const response = await fetch(`${API_URL}/configurations/${idConfiguration}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
@@ -716,7 +715,7 @@ export const useDeleteConfiguration = ()=>{
 }
 export const useCreateConfiguration = ()=>{
   const context = useContext(AuthContext);
-  const CreateConfiguration = async () => {
+  const CreateConfiguration = async (nom: string) => {
     try {
       if (!context?.groupeActifId || context.auth.idUser == null) {
         throw new Error("Problème serveur");
@@ -724,6 +723,7 @@ export const useCreateConfiguration = ()=>{
       const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/membres/${context.auth.idUser}/configurations`, {
         method: "POST",
         headers: getAuthHeaders(),
+        body: nom,
       }); 
 
       if (!response.ok) {
