@@ -140,8 +140,8 @@ export const useUpdateUser = () => {
 
   const updateUser = async (u : User) => {
     try {
-      const response = await fetch(`${API_URL}/membres/`, {
-        method: "PUT",
+      const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}`, {
+        method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({
         id: context?.auth.idUser,
@@ -490,7 +490,7 @@ export const useUpdateConfig = ()=>{
   const UpdateConfig = async (emailAdmin : string, maxTaches : number, maxGroupes : number, maxNotes : number, maxMouvements : number, maxAchats : number, maxPrets : number, maxConfigurations : number, maxImages : number) => {
     try {
       const response = await fetch(`${API_URL}/config`, {
-        method: "PUT",
+        method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({
         emailAdmin : emailAdmin,
@@ -657,7 +657,7 @@ export const useUpdateConfiguration = ()=>{
   const UpdateConfig = async (configuration : Configuration) => {
     try {
       const response = await fetch(`${API_URL}/configurations`, {
-        method: "PUT",
+        method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({
         id : configuration.id,
@@ -673,7 +673,9 @@ export const useUpdateConfiguration = ()=>{
       });
 
       if (!response.ok) {
-        throw new Error("Problème server");
+        const errMessage = await response.text();
+        console.error("Erreur serveur:", errMessage);
+        throw new Error(errMessage || "Problème serveur");
       }
 
       const contentType = response.headers.get("Content-Type");

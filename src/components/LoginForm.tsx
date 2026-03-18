@@ -13,10 +13,8 @@ export default function LoginForm() {
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErreur("");
-
     try {
       const resultat = await loginAgent(email, password);
-      console.log("réponse utilisateur:", resultat.utilisateur);
       const idUser = resultat.utilisateur?.id ?? resultat.utilisateur?.idUser ?? resultat.utilisateur?.idMembre;
       if(authContext && resultat.token && idUser){
         authContext.login(idUser, resultat.token);

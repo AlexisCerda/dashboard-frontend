@@ -1,7 +1,7 @@
 import WidgetFrame from "../WidgetFrame";
 import { CheckCircle2, Circle } from "lucide-react";
 
-export default function WidgetTaches({ onClose }: { onClose?: () => void }) {
+export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => void; isGuest?: boolean }) {
   const taches = [
     { id: 1, titre: "Mettre à jour le serveur VPN", fait: false },
     { id: 2, titre: "Créer les comptes", fait: true },

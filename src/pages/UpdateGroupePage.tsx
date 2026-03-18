@@ -54,17 +54,18 @@ export function UpdateGroupePage() {
     }
 
     const groupId = Number(context.groupeActifId);
-    const [resultatUser, resultatAdmin, resultatUserguest] = await Promise.all([
+    const [resultatUser, resultatAdmin, resultatUserguest, resultatAllUser] = await Promise.all([
       GetUserByGroupe(groupId),
       GetUsersByRole(groupId, ROLE_ADMIN),
       GetUsersByRole(groupId, ROLE_INVITE),
+      GetAllUser(),
     ]);
 
     setUsers(resultatUser);
     setUserAdmin(resultatAdmin);
     setUserguest(resultatUserguest);
+    setAllUser(resultatAllUser);
     setIsUrgent(resultatAdmin.length === 0);
-    
 
     return { resultatUser, resultatAdmin };
   }
@@ -106,39 +107,7 @@ export function UpdateGroupePage() {
   }, [context?.groupeActifId, context?.auth.idUser, navigate]);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      if (context?.groupeActifId) {
-        const resultatUser: User[] = await GetUserByGroupe(
-          Number(context.groupeActifId),
-        );
-        setUsers(resultatUser);
-      }
-    };
-    fetchUser();
-  }, [context?.groupeActifId]);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (context?.groupeActifId) {
-        const resultatUser: User[] = await GetAllUser();
-        setAllUser(resultatUser);
-      }
-    };
-    fetchUser();
-  }, [context?.groupeActifId]);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (context?.groupeActifId) {
-        const resultatUser: User[] = await GetUsersByRole(
-          Number(context.groupeActifId),
-          ROLE_ADMIN,
-        );
-        setUserAdmin(resultatUser);
-        setIsUrgent(resultatUser.length === 0);
-      }
-    };
-    fetchUser();
+    void refreshGroupData();
   }, [context?.groupeActifId]);
 
   useEffect(() => {
@@ -243,9 +212,6 @@ export function UpdateGroupePage() {
     const fullName = `${user.nom} ${user.prenom} ${user.id}`.toLowerCase();
     return fullName.includes(searchTerm.toLowerCase());
   });
-  useEffect(() => {
-    refreshGroupData();
-  }, [userguest]);
   
   return (
     <>

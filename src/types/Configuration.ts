@@ -8,4 +8,5 @@ export type Configuration = {
   prets : string;
   mouvements : string;
   nom: string;
+  version?: number;
 };

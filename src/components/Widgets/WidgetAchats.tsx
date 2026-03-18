@@ -1,7 +1,7 @@
 import WidgetFrame from "../WidgetFrame";
 import { CheckCircle2, Circle } from "lucide-react";
 
-export default function WidgetAchats({ onClose }: { onClose?: () => void }) {
+export default function WidgetAchats({ onClose, isGuest = true }: { onClose?: () => void; isGuest?: boolean }) {
   const taches = [
     { id: 1, titre: "Mettre à jour le serveur VPN", fait: false },
     { id: 2, titre: "Créer les comptes", fait: true },
@@ -12,7 +12,10 @@ export default function WidgetAchats({ onClose }: { onClose?: () => void }) {
       title="Achats"
       headerColor="bg-blue-600"
       onClose={onClose}
-    >
+      >
+        {isGuest && (
+          <p>ICI C MOIIIII</p>
+        )}
       <ul className="space-y-2 p-3">
         {taches.map((tache) => (
           <li

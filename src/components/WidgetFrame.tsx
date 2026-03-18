@@ -12,7 +12,7 @@ export default function WidgetFrame({
   title, 
   children, 
   onClose, 
-  headerColor = "bg-slate-800" 
+  headerColor = "bg-slate-800",
 }: WidgetFrameProps) {
 
   return (

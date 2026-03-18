@@ -19,8 +19,10 @@ export default function NavBar() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const resultatUser = await GetUser();
-      setEmailUser(resultatUser.email);
+      if (context?.isLogged){
+        const resultatUser = await GetUser();
+        setEmailUser(resultatUser.email);
+      }
     };
     fetchUser();
   }, []);
