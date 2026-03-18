@@ -289,6 +289,8 @@ export default function DashboardPage() {
     <div className="flex flex-col h-full w-full bg-slate-50 overflow-hidden text-sm">
       <header className="flex items-center gap-3 p-3 bg-white border-b border-gray-200 shadow-sm z-10 shrink-0">
         <SelectGroupe key={`select-${refreshVersion}`} />
+        {isGuest && <p>Invité</p>}
+        {!isGuest && <p>Membre</p>}
         <ButtonAdminGroupe key={`admin-${refreshVersion}`} />
 
         {context?.auth.idUser != null && (

@@ -5,8 +5,17 @@ export interface TacheDTO {
   id: number;
   nom: string;
   description: string;
-  dateDebut: string;
-  dateFin: string;    
+  dateDebut: string | null;
+  dateLimite: string | null;
+  etat: string;  
+  membresIds?: number[];
+}
+
+export interface MembreDTO {
+  id: number;
+  nom: string;
+  prenom: string;
+  email: string;
 }
 
 export interface AddMembreTache {
@@ -170,15 +179,18 @@ export const useDeleteTache = () => {
 };
 
 export const useAddTache = () => {
-  const addTache = async (idGroupe: number, tache: TacheDTO) => {
-    const response = await fetch(`${API_URL}/groupes/${idGroupe}/taches`, {
+  const context = useContext(AuthContext);
+  const addTache = async (tache: TacheDTO) => {
+    const response = await fetch(`${API_URL}/groupes/${context?.groupeActifId}/taches`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(tache),
     });
 
     if (!response.ok) {
-      throw new Error("Impossible d'ajouter la tache");
+      const errorMsg = await response.text();
+      console.error("Erreur serveur lors de l'ajout de la tache:", errorMsg);
+      throw new Error(`Impossible d'ajouter la tache: ${errorMsg}`);
     }
 
     return await response.json();
@@ -220,4 +232,32 @@ export const useGetEtatTache = () => {
   };
 
   return getEtatTache;
+};
+
+export const useGetMembreByTache= () => {
+  const context = useContext(AuthContext);
+
+  const getMembreByTache = async (idTache: number) => {
+    if (!context?.auth.idUser) {
+      return null;
+    } 
+
+    const response = await fetch(`${API_URL}/taches/${idTache}/membres`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (response.status === 401 || response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error("Impossible de recuperer les taches du membre");
+    }
+
+    const data = await response.json();
+    return data;
+  };
+  
+  return getMembreByTache;
 };

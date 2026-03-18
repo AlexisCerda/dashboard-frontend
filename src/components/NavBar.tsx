@@ -4,6 +4,13 @@ import { AuthContext } from '../context/AuthContext';
 import { Dog, SquarePlus, UserCog, UserStar } from 'lucide-react';
 import { useGetConfig, useGetUser } from '../services/membreService';
 
+type UserDTO = {
+  id: number;
+  nom: string;
+  prenom: string;
+  email: string;
+}
+
 export default function NavBar() {
   const context = useContext(AuthContext);
   const getConfig = useGetConfig();
@@ -11,6 +18,12 @@ export default function NavBar() {
 
   const [emailAdmin, setEmailAdmin] = useState("");
   const [emailUser, setEmailUser] = useState("");
+  const [user, setUser] = useState<UserDTO>({
+    id: 0,
+    nom: "",
+    prenom: "",
+    email: ""
+  });
   const navigate = useNavigate();
   const handleLogout = () => {
     context?.logout();
@@ -22,6 +35,7 @@ export default function NavBar() {
       if (context?.isLogged){
         const resultatUser = await GetUser();
         setEmailUser(resultatUser.email);
+        setUser(resultatUser);
       }
     };
     fetchUser();
@@ -49,24 +63,7 @@ export default function NavBar() {
               </Link>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            {context?.isLogged ? (
-              <>
-                <button onClick={handleLogout}
-                  className="bg-red-700 hover:bg-red-500 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                  Déconnexion </button> </>) 
-            : (
-              <div>
-              <Link to="/login"
-                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                Connexion </Link>
-              <Link to="/Signin"
-              className=" m-5 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                Inscription
-              </Link>
-              </div>
-            )}
-          </div>
+          
           <div>
             {context?.isLogged&&emailAdmin === emailUser &&(
               <Link
@@ -86,8 +83,25 @@ export default function NavBar() {
               </Link>
             )}
           </div>
-          
-          
+          <div>{context?.isLogged && <p>{user.nom}{"  "}{user.prenom}{" id : "}{user.id}</p>}</div>
+          <div className="flex items-center space-x-4">
+            {context?.isLogged ? (
+              <>
+                <button onClick={handleLogout}
+                  className="bg-red-700 hover:bg-red-500 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                  Déconnexion </button> </>) 
+            : (
+              <div>
+              <Link to="/login"
+                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                Connexion </Link>
+              <Link to="/Signin"
+              className=" m-5 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                Inscription
+              </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>

@@ -47,7 +47,6 @@ export default function SelectGroupe() {
     fetchDonnees();
   }, []);
 
-  // Vérifier que le groupe actif existe toujours dans la liste
   useEffect(() => {
     if (!isGroupesLoaded) {
       return;
@@ -55,12 +54,10 @@ export default function SelectGroupe() {
 
     const groupeExists = groupes.some((g) => String(g.id) === context?.groupeActifId);
     if (!groupeExists) {
-      // Le groupe actif n'existe plus, sélectionner le premier de la liste
       if (groupes.length > 0) {
         context?.setGroupeActifId(String(groupes[0].id));
         ChangeGroupe(groupes[0].id);
       } else {
-        // Aucun groupe disponible
         context?.setGroupeActifId("");
       }
     }
