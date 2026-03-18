@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import WidgetFrame from "../WidgetFrame";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { 
-  ROLE_INVITE, 
   useAddMembreToTache, 
   useAddTache, 
   useDeleteMembreFromTache, 
@@ -18,10 +17,9 @@ import {
 } from "../../services/WidgetService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
-import type { User } from "../../pages/UpdateUserPage";
 import ModalFormulaire from "../ModalFormulaire";
-import { CircleX, UserRoundX, Check } from "lucide-react"; // Ajout de 'Check'
-import { ROLE_MEMBRE, useGetUserByGroupe } from "../../services/membreService";
+import { CircleX, UserRoundX, Check } from "lucide-react"; 
+import { useGetUserByGroupe } from "../../services/membreService";
 
 export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => void; isGuest?: boolean }) {
   const [taches, setTaches] = useState<TacheDTO[]>([]);
@@ -36,8 +34,9 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
   const [membresGroupe, setMembresGroupe] = useState<MembreDTO[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchTermAdd, setSearchTermAdd] = useState("");
-  
   const [selectedMembresIds, setSelectedMembresIds] = useState<number[]>([]);
+  const [showMyTasksOnly, setShowMyTasksOnly] = useState(false);
+  const showMyTasksRef = useRef(showMyTasksOnly);
 
   const context = useContext(AuthContext);
   const GetTachesByGroupe = useGetTacheGroupe();
@@ -50,6 +49,10 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
   const RemoveMembre = useDeleteMembreFromTache();
   const addMembreToTache = useAddMembreToTache();
   const GetUsersbyGroupe = useGetUserByGroupe();
+
+  useEffect(() => {
+    showMyTasksRef.current = showMyTasksOnly;
+  }, [showMyTasksOnly]);
 
   const toggleMembreSelection = (membreId: number) => {
     setSelectedMembresIds((prev) => 
@@ -76,11 +79,11 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
     
     if (newTache && newTache.id && selectedMembresIds.length > 0) {
       await Promise.all(
-        selectedMembresIds.map(membreId => addMembreToTache(newTache.id, membreId))
+        selectedMembresIds.map(membreId => addMembreToTache(newTache.id as number, membreId))
       );
     }
     
-    await refreshGroupData();
+    await refreshData();
     
     setIsModalOpen(false);
     setNom("");
@@ -94,17 +97,12 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
 
   const handleDeleteTache = async (id: number) => {
     await DeleteTache(id);
-    refreshGroupData();
+    refreshData();
   };
 
   const handleRemoveMembre = async (tacheId: number, membreId: number) => {
     await RemoveMembre(tacheId, membreId);
-    refreshGroupData();
-  };
-
-  const handleAddMembreToTache = async (tacheId: number, membreId: number) => {
-    await addMembreToTache(tacheId, membreId);
-    refreshGroupData();
+    refreshData();
   };
 
   useEffect(() => {
@@ -116,12 +114,12 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
           if (message.body === "REFRESH_TACHES") {
-            refreshGroupData();
+            refreshData();
           }
         });
       },
     });
-    refreshGroupData();
+    refreshData();
     stompClient.activate();
     return () => { void stompClient.deactivate(); };
   }, [context?.groupeActifId, context?.auth.idUser]);
@@ -137,42 +135,38 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
     fetchEtats();
   }, []);
 
-  async function refreshGroupData() {
-    if (!context?.groupeActifId) {
-      return null;
-    }
+  async function refreshData() {
+    if (!context?.groupeActifId) return;
 
+    const isMyTasks = showMyTasksRef.current;
+    
     const [resultatGroupe] = await Promise.all([
-      GetTachesByGroupe(),  
+      isMyTasks ? GetTachesByUser() : GetTachesByGroupe()
     ]);
 
-    setTaches(resultatGroupe);
+    setTaches(resultatGroupe || []);
 
     const membresMap: Record<number, MembreDTO[]> = {};
-    await Promise.all(
-      resultatGroupe.map(async (tache: TacheDTO) => {
-        if (tache.id !== undefined) {
-          const resultatUser = await GetMembreByTache(tache.id);
-          membresMap[tache.id] = resultatUser || [];
-        }
-      })
-    );
+    if (resultatGroupe) {
+      await Promise.all(
+        resultatGroupe.map(async (tache: TacheDTO) => {
+          if (tache.id !== undefined) {
+            const resultatUser = await GetMembreByTache(tache.id);
+            membresMap[tache.id] = resultatUser || [];
+          }
+        })
+      );
+    }
     setMembres(membresMap);
+    
     const resultatTousMembres = await GetUsersbyGroupe(Number(context.groupeActifId));
     setMembresGroupe(resultatTousMembres);
+    return true;
   }
 
-  const GetTachesUser = async () => {
-    if (!context?.auth.idUser) {
-      return null;
-    }
-    const resultatUser = await GetTachesByUser();
-    setTaches(resultatUser);
-  };
-
   useEffect(() => {
-    refreshGroupData();
-  }, []);
+    refreshData();
+  }, [showMyTasksOnly]);
 
   const filteredTaches = taches.filter((tache: TacheDTO) => {
     const fullName = `${tache.nom} ${tache.description} ${tache.etat} ${tache.dateDebut} ${tache.dateLimite}`.toLowerCase();
@@ -189,67 +183,87 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
       headerColor="bg-blue-600"
       onClose={onClose}
     >
-      <ul className="space-y-2 p-3">
-        <input
-          type="text"
-          placeholder="Rechercher par nom, description, etat, date..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border p-2 rounded w-full mb-4"
-        />
-        {filteredTaches.map((tache) => (
-          <li
-            key={tache.id}
-            className="flex items-center gap-2 text-sm p-2 hover:bg-slate-50 rounded"
-          >
-            {tache.nom}{" "}
-            {tache.description}{" "}
-            {!isGuest ? (
-              <select value={tache.etat} onChange={(e) => tache.id !== undefined && updateEtatTache(tache.id, e.target.value)}>
-                {etats.map((etat) => (
-                  <option key={etat} value={etat}>
-                    {etat.replace("_", " ").toLowerCase()}
-                  </option>
+      <div className="flex flex-col h-full p-3">
+        
+        <div className="flex items-center gap-3 mb-4">
+          <input
+            type="text"
+            placeholder="Rechercher par nom, description, etat, date..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border p-2 rounded flex-1 min-w-0"
+          />
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-gray-200 px-3 py-2 rounded shadow-sm cursor-pointer hover:bg-slate-50 transition-colors whitespace-nowrap">
+            <input
+              type="checkbox"
+              checked={showMyTasksOnly}
+              onChange={(e) => setShowMyTasksOnly(e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+            />
+            Mes tâches
+          </label>
+        </div>
+
+        <ul className="space-y-2 flex-1 overflow-y-auto">
+          {filteredTaches.map((tache) => (
+            <li
+              key={tache.id}
+              className="flex items-center gap-2 text-sm p-2 hover:bg-slate-50 rounded"
+            >
+              {tache.nom}{" "}
+              {tache.description}{" "}
+              {!isGuest ? (
+                <select value={tache.etat} onChange={async (e) => {
+                  if (tache.id !== undefined) {
+                    await updateEtatTache(tache.id, e.target.value);
+                    await refreshData();
+                  }
+                }}>
+                  {etats.map((etat) => (
+                    <option key={etat} value={etat}>
+                      {etat.replace("_", " ").toLowerCase()}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p>{tache.etat.replace("_", " ").toLowerCase()}</p>
+              )}{" "}
+              {tache.dateDebut}{" "}
+              {tache.dateLimite}{" "}
+              <div className="flex -space-x-2 gap-2">
+                {tache.id !== undefined && membres[tache.id]?.map((membre: MembreDTO) => (
+                  <span className="flex items-center gap-1 bg-blue-100 text-blue-800 text-[10px] pl-2 pr-1 py-0.5 rounded-full border border-white" key={membre.id} title={`${membre.nom} ${membre.prenom}`}>
+                    {membre.nom}{" "}{membre.prenom}{" "}{membre.id} 
+                    {!isGuest && (
+                      <button 
+                        onClick={() => handleRemoveMembre(tache.id as number, membre.id as number)} 
+                        className="hover:text-red-600 hover:bg-red-100 text-red-500 rounded-full p-0.5 transition-colors"
+                        title="Retirer ce membre de la tâche"
+                      >
+                        <UserRoundX size={12}/>
+                      </button>
+                    )}
+                  </span>
                 ))}
-              </select>
-            ) : (
-              <p>{tache.etat.replace("_", " ").toLowerCase()}</p>
-            )}{" "}
-            {tache.dateDebut}{" "}
-            {tache.dateLimite}{" "}
-            <div className="flex -space-x-2 gap-2">
-              {tache.id !== undefined && membres[tache.id]?.map((membre: MembreDTO) => (
-                <span className="flex items-center gap-1 bg-blue-100 text-blue-800 text-[10px] pl-2 pr-1 py-0.5 rounded-full border border-white" key={membre.id} title={`${membre.nom} ${membre.prenom}`}>
-                  {membre.nom}{" "}{membre.prenom}{" "}{membre.id} 
-                  {!isGuest && (
-                    <button 
-                      onClick={() => handleRemoveMembre(tache.id as number, membre.id as number)} 
-                      className="hover:text-red-600 hover:bg-red-100 text-red-500 rounded-full p-0.5 transition-colors"
-                      title="Retirer ce membre de la tâche"
-                    >
-                      <UserRoundX size={12}/>
-                    </button>
-                  )}
-                </span>
-              ))}
-            </div>
-            {!isGuest && (
-              <button onClick={() => handleDeleteTache(tache.id as number)} className="hover:text-red-600 text-red-500 font-medium py-2 rounded transition-colors ml-auto">
-                <CircleX/>
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
-      
-      {!isGuest && (
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 rounded transition-colors"
-        >
-          + Nouvelle Tâche
-        </button>
-      )}
+              </div>
+              {!isGuest && (
+                <button onClick={() => handleDeleteTache(tache.id as number)} className="hover:text-red-600 text-red-500 font-medium py-2 rounded transition-colors ml-auto">
+                  <CircleX/>
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+        
+        {!isGuest && (
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 rounded transition-colors"
+          >
+            + Nouvelle Tâche
+          </button>
+        )}
+      </div>
       
       <ModalFormulaire
         isOpen={isModalOpen} 
