@@ -315,7 +315,9 @@ export const useAddUserByGroupe = ()=>{
       });
 
       if (!response.ok) {
-        throw new Error("Problème server");
+        const errorText = await response.text();
+        console.error(`Erreur ${response.status} lors de l'ajout de l'utilisateur ${idMembre} au groupe ${idGroupe}:`, errorText);
+        throw new Error(errorText || "Problème server");
       }
 
       const data = await response.json();
@@ -348,7 +350,9 @@ export const useUpdateMembreRole = ()=>{
       });
 
       if (!response.ok) {
-        throw new Error("Problème server");
+        const errorText = await response.text();
+        console.error(`Erreur ${response.status} lors de la mise à jour du rôle de l'utilisateur ${idMembre} dans le groupe ${idGroupe}:`, errorText);
+        throw new Error(errorText || "Problème server");
       }
 
       const data = await response.json();
@@ -395,7 +399,9 @@ export const useDeleteUser = ()=>{
       });
 
       if (!response.ok) {
-        throw new Error("Problème server");
+        const errorText = await response.text();
+        console.error(`Erreur ${response.status} lors de la suppression de l'utilisateur ${idMembre}:`, errorText);
+        throw new Error(errorText || "Problème server");
       }
 
       return null;
@@ -506,7 +512,9 @@ export const useUpdateConfig = ()=>{
       });
 
       if (!response.ok) {
-        throw new Error("Problème server");
+        const errorText = await response.text();
+        console.error(`Erreur ${response.status} lors de la mise à jour de la configuration:`, errorText);
+        throw new Error(errorText || "Problème server");
       }
 
       const contentType = response.headers.get("Content-Type");
@@ -608,7 +616,9 @@ export const useDeleteGroupe = ()=>{
       });
 
       if (!response.ok) {
-        throw new Error("Problème server");
+        const errorText = await response.text();
+        console.error(`Erreur ${response.status} lors de la suppression du groupe ${idGroupe}:`, errorText);
+        throw new Error(errorText || "Problème server");
       }
 
       return null;

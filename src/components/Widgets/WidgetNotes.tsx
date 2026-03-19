@@ -1,39 +1,176 @@
+import { useEffect, useState } from "react";
 import WidgetFrame from "../WidgetFrame";
-import { CheckCircle2, Circle } from "lucide-react";
+import { useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
+import { 
+  useCreateNoteByMembre, 
+  useDeleteNote, 
+  useGetNotesByMembre, 
+  useUpdateNoteByMembre, 
+} from "../../services/WidgetService";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
+import ModalFormulaire from "../ModalFormulaire";
+import { CircleX, PlusCircle } from "lucide-react"; 
+import EditableField from "../EditableField";
+
+export interface NoteDTO {
+  id: number;
+  description: string;
+}
 
 export default function WidgetNotes({ onClose, isGuest }: { onClose?: () => void; isGuest?: boolean }) {
-  const taches = [
-    { id: 1, titre: "Mettre à jour le serveur VPN", fait: false },
-    { id: 2, titre: "Créer les comptes", fait: true },
-  ];
+  const [notes, setNotes] = useState<NoteDTO[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [description, setDescription] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const context = useContext(AuthContext);
+  const getNotesByMembre = useGetNotesByMembre();
+  const updateNoteByMembre = useUpdateNoteByMembre();
+  const createNoteByMembre = useCreateNoteByMembre();
+  const deleteNote = useDeleteNote();
+
+  const handleSubmitNote = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    const data: NoteDTO = {
+      id: 0,
+      description,
+    };
+
+    try {
+      await createNoteByMembre(data);
+      await refreshData();
+      setIsModalOpen(false);
+      setDescription("");
+    } catch (error: any) {
+      alert(error.message);
+    }
+  };
+
+  const handleDeleteNote = async (id: number) => {
+    await deleteNote(id);
+    refreshData();
+  };
+
+  const handleUpdateField = async (note: NoteDTO) => {
+    await updateNoteByMembre(note);
+    refreshData();
+  };
+
+  useEffect(() => {
+    if (!context?.auth.idUser) return;
+
+    const frequence = `/topic/membre/${context.auth.idUser}`;
+    const stompClient = new Client({
+      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      onConnect: () => {
+        stompClient.subscribe(frequence, (message) => {
+          if (message.body === "REFRESH_NOTES") { 
+            refreshData();
+          }
+        });
+      },
+    });
+    refreshData();
+    stompClient.activate();
+    return () => { void stompClient.deactivate(); };
+  }, [context?.auth.idUser]);
+
+  async function refreshData() {
+    if (!context?.auth.idUser) return;
+    try {
+      const resultat = await getNotesByMembre();
+      setNotes(resultat || []);
+    } catch (error) {
+      console.error("Erreur", error);
+    }
+  }
+
+  const filteredNotes = notes.filter((n) => {
+    return n.description.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
     <WidgetFrame
-      title="Notes"
-      headerColor="bg-blue-600"
+      title="Mes Notes Personnelles"
+      headerColor="bg-yellow-500"
       onClose={onClose}
     >
-      <ul className="space-y-2 p-3">
-        {taches.map((tache) => (
-          <li
-            key={tache.id}
-            className="flex items-center gap-2 text-sm p-2 hover:bg-slate-50 rounded"
-          >
-            {tache.fait ? (
-              <CheckCircle2 className="text-green-500 w-4 h-4" />
-            ) : (
-              <Circle className="text-gray-400 w-4 h-4" />
-            )}
-            <span
-              className={
-                tache.fait ? "line-through text-gray-400" : "text-gray-700"
-              }
+      <div className="flex flex-col h-full p-3">
+        
+        <div className="flex items-center gap-3 mb-4">
+          <input
+            type="text"
+            placeholder="Rechercher dans mes notes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border p-2 rounded flex-1 min-w-0 text-sm"
+          />
+        </div>
+
+        <ul className="space-y-2 flex-1 overflow-y-auto">
+          {filteredNotes.map((n) => (
+            <li
+              key={n.id}
+              className="flex items-start gap-2 text-sm p-3 bg-yellow-50 hover:bg-yellow-100 rounded border-l-4 border-yellow-400 shadow-sm"
             >
-              {tache.titre}
-            </span>
-          </li>
-        ))}
-      </ul>
+              <div className="flex-1 min-w-0">
+                <EditableField
+                  value={n.description} 
+                  onSave={(newVal) => { n.description = newVal; handleUpdateField(n); }} 
+                  multiline={true}
+                />
+              </div>
+                <button 
+                  onClick={() => handleDeleteNote(n.id)} 
+                  className="hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors ml-auto flex-shrink-0"
+                  title="Supprimer cette note"
+                >
+                  <CircleX size={18} />
+                </button>
+            </li>
+          ))}
+          {filteredNotes.length === 0 && (
+            <p className="text-center text-gray-400 mt-4 text-xs italic">Aucune note enregistrée.</p>
+          )}
+        </ul>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="mt-2 w-full bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 rounded transition-colors flex items-center justify-center gap-2"
+          >
+            <PlusCircle size={18} />
+          </button>
+      </div>
+      
+      <ModalFormulaire
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title="Ajouter une note"
+      >
+        <form onSubmit={handleSubmitNote} className="flex flex-col gap-3">
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea 
+              className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-yellow-500 min-h-[100px]" 
+              placeholder="Ex: Manger 5 fruits et légumes par jour..." 
+              autoFocus
+              required
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            className="mt-4 w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 rounded transition-colors"
+          >
+            Enregistrer la note
+          </button>
+        </form>
+      </ModalFormulaire>
     </WidgetFrame>
   );
 }

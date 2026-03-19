@@ -6,6 +6,7 @@ interface EditableFieldProps {
   type?: string;
   isGuest?: boolean;
   placeholder?: string;
+  multiline?: boolean;
 }
 
 export default function EditableField({ 
@@ -13,7 +14,8 @@ export default function EditableField({
   onSave, 
   type = "text", 
   isGuest,
-  placeholder = "..." 
+  placeholder = "...",
+  multiline = false
 }: EditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value || "");
@@ -37,7 +39,15 @@ export default function EditableField({
   };
 
   if (isEditing) {
-    return (
+    return multiline ? (
+      <textarea
+        autoFocus
+        value={tempValue}
+        onChange={(e) => setTempValue(e.target.value)}
+        onBlur={handleBlur}
+        className="w-full border-b-2 border-blue-500 outline-none px-1 bg-blue-50 text-slate-800 font-medium min-h-[60px]"
+      />
+    ) : (
       <input
         type={type}
         autoFocus
@@ -56,7 +66,7 @@ export default function EditableField({
         setTempValue(value || "");
         setIsEditing(true);
       }} 
-      className="cursor-pointer hover:bg-slate-200 px-1 rounded transition-colors break-all"
+      className={`cursor-pointer hover:bg-slate-200 px-1 rounded transition-colors break-all ${multiline ? "whitespace-pre-wrap" : ""}`}
       title="Cliquer pour modifier"
     >
       {value || placeholder}

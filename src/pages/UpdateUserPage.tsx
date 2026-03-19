@@ -29,7 +29,6 @@ export default function UpdateUserPage() {
     const fetchUser = async () => {
       try {
         const resultatUser = await GetUser();
-        console.log("réponse:", resultatUser);
         setNom(resultatUser.nom);
         setEmail(resultatUser.email);
         setPrenom(resultatUser.prenom);
