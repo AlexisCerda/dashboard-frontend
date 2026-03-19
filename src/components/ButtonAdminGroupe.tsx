@@ -30,7 +30,7 @@ export function ButtonAdminGroupe(){
     return <></>;
   } else {
 
-  return <Link to="/update-group">
+  return <Link to="/update-group" className="p-2 rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition-colors" title="Gérer le groupe">
     <Settings2/>
   </Link>;
   }

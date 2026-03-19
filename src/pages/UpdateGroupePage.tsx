@@ -214,14 +214,14 @@ export function UpdateGroupePage() {
   });
   
   return (
-    <>
-      <div>
-        <ul>
+    <div className="min-h-screen bg-slate-50 p-6">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <h1 className="text-2xl font-bold text-slate-800 mb-4">Gestion du groupe</h1>
+        <ul className="space-y-2">
           {uniqueUsers.map((user: User) => (
             <li key={user.id}>
               <div
-                style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
-                className="m-5"
+                className="flex items-center gap-2 p-3 rounded-xl border border-slate-100 bg-slate-50 text-slate-700"
               >
                 {!isUrgent && (
                   <>
@@ -274,7 +274,7 @@ export function UpdateGroupePage() {
                       )
                     )}
                     {user.id !== currentuser?.id && (
-                      <button onClick={() => void handleRemoveUser(user.id)}>
+                      <button onClick={() => void handleRemoveUser(user.id)} className="text-red-500 hover:text-red-600">
                         <LogOut />
                       </button>
                     )}
@@ -297,36 +297,30 @@ export function UpdateGroupePage() {
           ))}
         </ul>
       </div>
-      <div>
-        <button onClick={HandleAddUser} className="m-5">
+      <div className="max-w-4xl mx-auto mt-4">
+        <button onClick={HandleAddUser} className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md inline-flex items-center gap-2">
           {" "}
           <UserPlus />{" "}
         </button>
       </div>
       {verifAddUser && (
-        <div>
+        <div className="max-w-4xl mx-auto mt-4 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <input
             type="text"
             placeholder="Rechercher par nom ou prénom..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded w-full mb-4"
+            className="border border-slate-200 p-2 rounded-lg w-full mb-4"
           />
-          <ul>
+          <ul className="space-y-2">
             {filteredUsers.map((user: User) => (
               <li key={user.id}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.4rem",
-                  }}
-                  className="m-5"
-                >
+                <div className="flex items-center gap-2 p-3 rounded-xl border border-slate-100 bg-slate-50 text-slate-700">
                   {user.nom} {user.prenom} : id = {user.id}{" "}
                   <button
                     type="button"
                     onClick={() => void handleAddMember(user.id)}
+                    className="text-emerald-600 hover:text-emerald-700"
                   >
                     <CirclePlus />
                   </button>
@@ -335,13 +329,13 @@ export function UpdateGroupePage() {
             ))}
 
             {filteredUsers.length === 0 && (
-              <li className="text-gray-500 m-5 italic">
+              <li className="text-slate-500 italic p-2">
                 Aucun utilisateur trouvé pour "{searchTerm}".
               </li>
             )}
           </ul>
         </div>
       )}
-    </>
+    </div>
   );
 }

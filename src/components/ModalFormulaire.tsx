@@ -13,20 +13,20 @@ export default function ModalFormulaire({ isOpen, onClose, title, children }: Mo
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col">        
+    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-md overflow-hidden flex flex-col">        
         
-        <div className="bg-slate-800 px-4 py-3 flex justify-between items-center text-white">
-          <h3 className="font-semibold text-lg">{title}</h3>
+        <div className="bg-slate-50 px-4 py-3 flex justify-between items-center border-b border-slate-100">
+          <h3 className="font-semibold text-lg text-slate-800">{title}</h3>
           <button 
             onClick={onClose}
-            className="hover:bg-slate-700 p-1 rounded transition-colors"
+            className="hover:bg-slate-200 p-1 rounded-md transition-colors text-slate-500"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-4 bg-slate-50">
+        <div className="p-4 bg-white">
           {children}
         </div>
         

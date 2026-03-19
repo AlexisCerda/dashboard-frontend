@@ -12,15 +12,21 @@ import AdminPage from "./pages/Adminpage";
 import AdminRoute from "./components/AdminRoute";
 import { AuthContext } from "./context/AuthContext";
 import { useContext, useEffect, useState } from "react";
-import { useGetUser } from "./services/membreService";
+import { useGetConfig, useGetUser } from "./services/membreService";
 
 function App() {
   const context = useContext(AuthContext);
   const GetUser = useGetUser();
-  const configServeur = {
-    emailAdmin: "alexis@",
-  };
+  const getconfig = useGetConfig();
+  const [adresseAdmin, setAdresseAdmin] = useState("");
+  useEffect(() => {
+    const fetchConfig = async () => {
+      const data = await getconfig();
+      setAdresseAdmin(data.emailAdmin);
+    };
 
+    fetchConfig();
+  }, []);
   const [user, setUser] = useState<User>();
   useEffect(() => {
     const fetchUser = async () => {
@@ -32,7 +38,7 @@ function App() {
     fetchUser();
   }, [context?.auth.idUser]);
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden">
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-slate-50 text-slate-700">
       <BrowserRouter>
         <NavBar />
         <Routes>
@@ -76,7 +82,7 @@ function App() {
             element={
               <AdminRoute
                 userEmail={user?.email}
-                adminEmailFromConfig={configServeur.emailAdmin}
+                adminEmailFromConfig={adresseAdmin}
               >
                 <AdminPage />
               </AdminRoute>

@@ -8,7 +8,7 @@ interface WidgetTachesProps {
 }
 
 export default function WidgetTaches({ groupeId }: WidgetTachesProps) {
-  const [taches, setTaches] = useState<any[]>([]);
+  const [taches] = useState<any[]>([]);
 
   const fetchTaches = async () => {
     try {

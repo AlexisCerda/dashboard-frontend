@@ -19,7 +19,7 @@ import {
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
-import { CircleX, UserRoundX, Check } from "lucide-react"; 
+import { CircleX, UserRoundX, Check, ChevronUp, ChevronDown, CirclePlus } from "lucide-react"; 
 import { useGetUserByGroupe } from "../../services/membreService";
 import EditableField from "../EditableField";
 
@@ -38,6 +38,7 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
   const [searchTermAdd, setSearchTermAdd] = useState("");
   const [selectedMembresIds, setSelectedMembresIds] = useState<number[]>([]);
   const [showMyTasksOnly, setShowMyTasksOnly] = useState(false);
+  const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
   const showMyTasksRef = useRef(showMyTasksOnly);
 
   const context = useContext(AuthContext);
@@ -120,6 +121,7 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
       webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
           if (message.body === "REFRESH_TACHES") {
@@ -129,8 +131,17 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
       },
     });
     refreshData();
-    stompClient.activate();
-    return () => { void stompClient.deactivate(); };
+
+    const activationTimer = window.setTimeout(() => {
+      stompClient.activate();
+    }, 150);
+
+    return () => {
+      window.clearTimeout(activationTimer);
+      if (stompClient.active) {
+        void stompClient.deactivate();
+      }
+    };
   }, [context?.groupeActifId, context?.auth.idUser]);
 
   useEffect(() => {
@@ -205,20 +216,21 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
   return (
     <WidgetFrame
       title="Tâches à faire"
-      headerColor="bg-blue-600"
+      headerColor="bg-blue-600 text-white border-b border-blue-700"
       onClose={onClose}
     >
       <div className="flex flex-col h-full p-3">
-        
-        <div className="flex items-center gap-3 mb-4">
-          <input
-            type="text"
-            placeholder="Rechercher par nom, description, etat, date..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded flex-1 min-w-0"
-          />
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-gray-200 px-3 py-2 rounded shadow-sm cursor-pointer hover:bg-slate-50 transition-colors whitespace-nowrap">
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              type="button"
+              onClick={() => setIsSearchCollapsed((prev) => !prev)}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+              title={isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"}
+            >
+              {isSearchCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            </button>
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 px-3 py-2 rounded-lg shadow-sm cursor-pointer hover:bg-slate-50 transition-colors whitespace-nowrap">
             <input
               type="checkbox"
               checked={showMyTasksOnly}
@@ -227,26 +239,49 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
             />
             Mes tâches
           </label>
+            {!isGuest && (
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all hover:-translate-y-0.5 hover:shadow-md"
+                title="Ajouter"
+              >
+                <CirclePlus/>
+              </button>
+            )}
+          </div>
+          {!isSearchCollapsed && (
+            <input
+              type="text"
+              placeholder="Rechercher par nom, description, etat, date..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border border-blue-200 bg-blue-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          )}
         </div>
 
         <ul className="space-y-2 flex-1 overflow-y-auto">
           {filteredTaches.map((tache) => (
             <li
               key={tache.id}
-              className="flex items-center gap-2 text-sm p-2 hover:bg-slate-50 rounded"
+              className="flex flex-col xl:flex-row xl:items-center gap-2 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200"
             >
-              <EditableField
-                value={tache.nom} 
-                onSave={(newVal) => (tache.nom = newVal, handleUpdateField(tache))} 
-                isGuest={isGuest || showMyTasksOnly}
-              />{" "}
-              <EditableField
-                value={tache.description} 
-                isGuest={isGuest || showMyTasksOnly}
-                onSave={(newVal) => { tache.description = newVal; handleUpdateField(tache); }} 
-              />{" "}
+              <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
+                <EditableField
+                  value={tache.nom} 
+                  onSave={(newVal) => (tache.nom = newVal, handleUpdateField(tache))} 
+                  isGuest={isGuest || showMyTasksOnly}
+                />
+                <EditableField
+                  value={tache.description} 
+                  isGuest={isGuest || showMyTasksOnly}
+                  onSave={(newVal) => { tache.description = newVal; handleUpdateField(tache); }} 
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
               {!isGuest && !showMyTasksOnly ? (
-                <select value={tache.etat} onChange={async (e) => {
+                <select className="text-xs p-1.5 rounded-lg border border-slate-200 outline-none" value={tache.etat} onChange={async (e) => {
                   if (tache.id !== undefined) {
                     await updateEtatTache(tache.id, e.target.value);
                     await refreshData();
@@ -259,23 +294,24 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
                   ))}
                 </select>
               ) : (
-                <p>{tache.etat.replace("_", " ").toLowerCase()}</p>
-              )}{" "}
+                <p className="bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-1 text-xs font-medium">{tache.etat.replace("_", " ").toLowerCase()}</p>
+              )}
               <EditableField
                 value={tache.dateDebut} 
                 type="date"
                 isGuest={isGuest || showMyTasksOnly}
                 onSave={(newVal) => { tache.dateDebut = formatDate(newVal); handleUpdateField(tache); }} 
-              />{" "}
+              />
               <EditableField
                 value={tache.dateLimite} 
                 type="date"
                 isGuest={isGuest || showMyTasksOnly}
                 onSave={(newVal) => { tache.dateLimite = formatDate(newVal); handleUpdateField(tache); }} 
-              />{" "}
-              <div className="flex -space-x-2 gap-2">
+              />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
                 {tache.id !== undefined && membres[tache.id]?.map((membre: MembreDTO) => (
-                  <span className="flex items-center gap-1 bg-blue-100 text-blue-800 text-[10px] pl-2 pr-1 py-0.5 rounded-full border border-white" key={membre.id} title={`${membre.nom} ${membre.prenom}`}>
+                  <span className="flex items-center gap-1 bg-blue-50 text-blue-700 text-[10px] pl-2 pr-1 py-0.5 rounded-full border border-blue-200" key={membre.id} title={`${membre.nom} ${membre.prenom}`}>
                     {membre.nom}{" "}{membre.prenom}{" "}{membre.id} 
                     {!isGuest && !showMyTasksOnly && (
                       <button 
@@ -290,7 +326,7 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
                 ))}
               </div>
               {!isGuest && !showMyTasksOnly && (
-                <button onClick={() => handleDeleteTache(tache.id as number)} className="hover:text-red-600 text-red-500 font-medium py-2 rounded transition-colors ml-auto">
+                <button onClick={() => handleDeleteTache(tache.id as number)} className="hover:text-red-600 text-red-500 font-medium py-2 rounded transition-colors xl:ml-auto">
                   <CircleX/>
                 </button>
               )}
@@ -298,14 +334,6 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
           ))}
         </ul>
         
-        {!isGuest && (
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 rounded transition-colors"
-          >
-            + Nouvelle Tâche
-          </button>
-        )}
       </div>
       
       <ModalFormulaire

@@ -1,15 +1,15 @@
-import { useContext, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import { Dog, SquarePlus, UserCog, UserStar } from 'lucide-react';
-import { useGetConfig, useGetUser } from '../services/membreService';
+import { useContext, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import { UserCog, UserStar } from "lucide-react";
+import { useGetConfig, useGetUser } from "../services/membreService";
 
 type UserDTO = {
   id: number;
   nom: string;
   prenom: string;
   email: string;
-}
+};
 
 export default function NavBar() {
   const context = useContext(AuthContext);
@@ -22,17 +22,17 @@ export default function NavBar() {
     id: 0,
     nom: "",
     prenom: "",
-    email: ""
+    email: "",
   });
   const navigate = useNavigate();
   const handleLogout = () => {
     context?.logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   useEffect(() => {
     const fetchUser = async () => {
-      if (context?.isLogged){
+      if (context?.isLogged) {
         const resultatUser = await GetUser();
         setEmailUser(resultatUser.email);
         setUser(resultatUser);
@@ -42,63 +42,87 @@ export default function NavBar() {
   }, []);
 
   useEffect(() => {
-      getConfig().then(data => { setEmailAdmin(data.emailAdmin);})
-    }, []);
+    getConfig().then((data) => {
+      setEmailAdmin(data.emailAdmin);
+    });
+  }, []);
+
   return (
-    <nav className="bg-gray-300 text-white shadow-md">
+    <nav className="bg-white/95 backdrop-blur border-b-2 border-slate-200 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.5)] z-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4">
-              {context?.isLogged && (
-                <>
-                  <Link to="/dashboard" className="hover:bg-gray-500 px-3 py-2 rounded-md text-sm font-medium">
-                    Mon Tableau de Bord
-                  </Link>
-                  
-                </>
-              )}
-              <Link to="/help" className="hover:bg-gray-500 px-3 py-2 rounded-md text-sm font-medium">
-                Tutoriel
-              </Link>
+        <div className="flex items-center justify-between h-16 gap-6">
+          <div className="flex items-center gap-6 min-w-0">
+            <div className="hidden md:block">
+              <div className="ml-2 flex items-baseline space-x-2">
+                {context?.isLogged && (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      className="hover:bg-slate-100 text-slate-800 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      Mon Tableau de Bord
+                    </Link>
+                  </>
+                )}
+                <Link
+                  to="/help"
+                  className="hover:bg-slate-100 text-slate-500 hover:text-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Tutoriel
+                </Link>
+              </div>
             </div>
+
+            {context?.isLogged && (
+              <div className="hidden xl:flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-500 whitespace-nowrap">
+                {user.nom} {user.prenom}
+                {" · id : "}
+                {user.id}
+              </div>
+            )}
           </div>
-          
-          <div>
-            {context?.isLogged&&emailAdmin === emailUser &&(
+
+          <div className="flex items-center gap-2">
+            {context?.isLogged && emailAdmin === emailUser && (
               <Link
                 to="/admin"
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-colors 2xl:border-t-8">
+                className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Administration"
+              >
                 <UserStar className="w-5 h-5" />
               </Link>
             )}
-          </div>          
-          <div>
-            {context?.isLogged &&(
-              
+            {context?.isLogged && (
               <Link
                 to="/update-user"
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-colors 2xl:border-t-8">
+                className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Mon profil"
+              >
                 <UserCog className="w-5 h-5" />
               </Link>
             )}
-          </div>
-          <div>{context?.isLogged && <p>{user.nom}{"  "}{user.prenom}{" id : "}{user.id}</p>}</div>
-          <div className="flex items-center space-x-4">
+
             {context?.isLogged ? (
-              <>
-                <button onClick={handleLogout}
-                  className="bg-red-700 hover:bg-red-500 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                  Déconnexion </button> </>) 
-            : (
-              <div>
-              <Link to="/login"
-                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                Connexion </Link>
-              <Link to="/Signin"
-              className=" m-5 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                Inscription
-              </Link>
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-md"
+              >
+                Déconnexion
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  Connexion
+                </Link>
+                <Link
+                  to="/Signin"
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  Inscription
+                </Link>
               </div>
             )}
           </div>

@@ -13,7 +13,7 @@ import {
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
-import { CircleX } from "lucide-react"; 
+import { CircleX, ChevronUp, ChevronDown, CirclePlus } from "lucide-react"; 
 import EditableField from "../EditableField";
 
 // L'interface exacte que tu as fournie
@@ -44,6 +44,7 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
   const [dateFin, setDateFin] = useState("");
   const [etat, setEtat] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
 
   const context = useContext(AuthContext);
   const getPretGroupe = useGetPretGroupe();
@@ -100,6 +101,7 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
       webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
           // ⚠️ Assure-toi que Spring Boot envoie bien "REFRESH_PRETS" !
@@ -110,8 +112,17 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
       },
     });
     refreshData();
-    stompClient.activate();
-    return () => { void stompClient.deactivate(); };
+
+    const activationTimer = window.setTimeout(() => {
+      stompClient.activate();
+    }, 150);
+
+    return () => {
+      window.clearTimeout(activationTimer);
+      if (stompClient.active) {
+        void stompClient.deactivate();
+      }
+    };
   }, [context?.groupeActifId, context?.auth.idUser]);
 
   useEffect(() => {
@@ -161,31 +172,52 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
   return (
     <WidgetFrame
       title="Prêts de Matériel"
-      headerColor="bg-amber-600" // Un joli ambré/orange pour les prêts
+      headerColor="bg-amber-500 text-white border-b border-amber-600"
       onClose={onClose}
     >
       <div className="flex flex-col h-full p-3">
-        
-        <div className="flex items-center gap-3 mb-4">
-          <input
-            type="text"
-            placeholder="Rechercher un prêt, matériel, emprunteur..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded flex-1 min-w-0"
-          />
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              type="button"
+              onClick={() => setIsSearchCollapsed((prev) => !prev)}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+              title={isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"}
+            >
+              {isSearchCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            </button>
+            {!isGuest && (
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all hover:-translate-y-0.5 hover:shadow-md"
+                title="Ajouter"
+              >
+                <CirclePlus/>
+              </button>
+            )}
+          </div>
+          {!isSearchCollapsed && (
+            <input
+              type="text"
+              placeholder="Rechercher un prêt, matériel, emprunteur..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border border-amber-200 bg-amber-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-amber-200"
+            />
+          )}
         </div>
 
         <ul className="space-y-2 flex-1 overflow-y-auto">
           {filteredPrets.map((p) => (
             <li
               key={p.id}
-              className="flex items-center gap-2 text-sm p-2 hover:bg-slate-50 rounded"
+              className="flex flex-col xl:flex-row xl:items-start gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200"
             >
               <div className="flex flex-col flex-1 gap-1">
                 
                 {/* MATÉRIEL ET QUANTITÉ */}
-                <div className="font-semibold text-slate-800 flex items-center gap-1">
+                <div className="font-semibold text-slate-800 flex flex-wrap items-center gap-1">
                   <span className="text-gray-400 font-normal">Qte:</span>
                   <EditableField
                     value={String(p.quantite)} 
@@ -203,7 +235,7 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
                 </div>
 
                 {/* MARQUE */}
-                <div className="text-xs text-slate-500 flex items-center gap-2">
+                <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
                   <span className="text-gray-400">Marque:</span>
                   <EditableField
                     value={p.marqueMateriel} 
@@ -214,7 +246,7 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
                 </div>
 
                 {/* EMPRUNTEUR */}
-                <div className="text-[11px] text-gray-500 flex gap-1 mt-1">
+                <div className="text-[11px] text-gray-500 flex flex-wrap gap-1 mt-1">
                   <span className="font-semibold text-amber-700">Emprunteur :</span>
                   <EditableField
                     value={p.prenomPersonne} 
@@ -231,7 +263,7 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
                 </div>
 
                 {/* DATES */}
-                <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1 bg-amber-50 p-1 rounded">
+                <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 mt-1 bg-amber-50 p-1 rounded">
                   <div className="flex items-center gap-1 text-green-700">
                     <span title="Date d'emprunt">Du</span>
                     <EditableField
@@ -264,7 +296,7 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
                         await refreshData();
                       }
                     }}
-                    className="text-xs p-1 rounded border border-gray-300 outline-none"
+                    className="text-xs p-1.5 rounded-lg border border-amber-200 outline-none bg-amber-50 text-amber-800"
                   >
                     {etats.map((etat) => (
                       <option key={etat} value={etat}>
@@ -273,7 +305,7 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
                     ))}
                   </select>
                 ) : (
-                  <p className="text-xs bg-gray-200 px-2 py-1 rounded">{p.etat.replace("_", " ").toLowerCase()}</p>
+                  <p className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-full font-medium">{p.etat.replace("_", " ").toLowerCase()}</p>
                 )
               )}
 
@@ -281,7 +313,7 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
               {!isGuest && (
                 <button 
                   onClick={() => handleDeletePret(p.id)} 
-                  className="hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors ml-auto"
+                  className="hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors xl:ml-auto"
                   title="Supprimer ce prêt"
                 >
                   <CircleX size={18} />
@@ -294,14 +326,6 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
           )}
         </ul>
         
-        {!isGuest && (
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="mt-2 w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-2 rounded transition-colors"
-          >
-            + Enregistrer un Prêt
-          </button>
-        )}
       </div>
       
       <ModalFormulaire

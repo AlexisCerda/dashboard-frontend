@@ -11,8 +11,7 @@ export default function AdminRoute({ children, userEmail, adminEmailFromConfig }
   
   if (!userEmail || !adminEmailFromConfig) {
     return <div>Chargement de la sécurité...</div>;
-  }
-
+  }  
   if (userEmail !== adminEmailFromConfig) {
     console.warn("Accès refusé : Vous n'êtes pas l'administrateur.");
     return <Navigate to="/dashboard" replace />; 

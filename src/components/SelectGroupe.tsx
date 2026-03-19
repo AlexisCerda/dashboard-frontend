@@ -89,7 +89,7 @@ export default function SelectGroupe() {
     <select
       value={context?.groupeActifId || ""}
       onChange={handleChange}
-      className="p-2 border rounded text-black bg-white"
+      className="p-2.5 border border-slate-200 rounded-lg text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
     >
       {!context?.groupeActifId && (
         <option value="" disabled>Sélectionnez un groupe</option>

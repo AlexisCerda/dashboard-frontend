@@ -59,7 +59,6 @@ export default function DashboardPage() {
   const [erreur, setErreur] = useState("");
   const [isCreatingConfig, setIsCreatingConfig] = useState(false);
   const [newConfigName, setNewConfigName] = useState("");
-  const [userAdmin, setUserAdmin] = useState<User[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
 
@@ -159,21 +158,51 @@ export default function DashboardPage() {
   );
 
   const handleAddWidget = (widgetName: string) => {
-    let nextX = 0;
-    layout.forEach((w) => {
-      if (w.y === 0 && w.x + w.w > nextX) {
-        nextX = w.x + w.w;
-      }
-    });
+    const cols = 24;
+    const maxRows = 24;
+    const widgetW = 4;
+    const widgetH = 4;
 
-    if (nextX + 4 > 24) {
-      nextX = 0;
+    const hasCollision = (x: number, y: number) =>
+      layout.some((item) => {
+        const noOverlap =
+          x + widgetW <= item.x ||
+          x >= item.x + item.w ||
+          y + widgetH <= item.y ||
+          y >= item.y + item.h;
+        return !noOverlap;
+      });
+
+    let foundPosition: { x: number; y: number } | null = null;
+
+    for (let y = 0; y <= maxRows - widgetH; y += widgetH) {
+      for (let x = 0; x <= cols - widgetW; x += widgetW) {
+        if (!hasCollision(x, y)) {
+          foundPosition = { x, y };
+          break;
+        }
+      }
+      if (foundPosition) break;
     }
-    
-    const newItem = { i: widgetName, x: nextX, y: 0, w: 4, h: 4 };
-    
+
+    if (!foundPosition) {
+      setErreur("Plus de place disponible pour ajouter un widget.");
+      return;
+    }
+
+    if (erreur === "Plus de place disponible pour ajouter un widget.") {
+      setErreur("");
+    }
+
+    const newItem = {
+      i: widgetName,
+      x: foundPosition.x,
+      y: foundPosition.y,
+      w: widgetW,
+      h: widgetH,
+    };
+
     const newLayout = [...layout, newItem];
-    
     setLayout(newLayout);
     SaveLayoutBD(newLayout);
   };
@@ -220,7 +249,6 @@ export default function DashboardPage() {
           Number(context.groupeActifId),
           ROLE_ADMIN
         );
-        setUserAdmin(resultatUser);
         if (resultatUser.length === 0) {
           setErreur("Mode Urgence activé. Il n'y a aucun Admin dans le groupe. Veuillez en mettre un !");
         }
@@ -240,6 +268,7 @@ export default function DashboardPage() {
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
       webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
           if (message.body === "REFRESH_MEMBRES") {
@@ -249,8 +278,16 @@ export default function DashboardPage() {
       },
     });
 
-    stompClient.activate();
-    return () => { void stompClient.deactivate(); };
+    const activationTimer = window.setTimeout(() => {
+      stompClient.activate();
+    }, 150);
+
+    return () => {
+      window.clearTimeout(activationTimer);
+      if (stompClient.active) {
+        void stompClient.deactivate();
+      }
+    };
   }, [context?.groupeActifId, context?.auth.idUser]);
 
   async function handleRemoveUser(userId: number) {
@@ -269,6 +306,7 @@ export default function DashboardPage() {
     const config = await GetConfigAdmin();
     if (configs.length >= config.maxConfigurations) {
       setErreur("Nombre maximum de configurations atteint");
+      setIsCreatingConfig(false);
       return;
     }
     if (newConfigName.trim()) {
@@ -286,70 +324,69 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-50 overflow-hidden text-sm">
-      <header className="flex items-center gap-3 p-3 bg-white border-b border-gray-200 shadow-sm z-10 shrink-0">
-        <SelectGroupe key={`select-${refreshVersion}`} />
-        {isGuest && <p>Invité</p>}
-        {!isGuest && <p>Membre</p>}
-        <ButtonAdminGroupe key={`admin-${refreshVersion}`} />
-
-        {context?.auth.idUser != null && (
-          <>
-            <button
-              className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-              onClick={() => setIsModalOpen(true)}
-              title="Quitter le groupe"
-            >
-              <LogOut size={20} />
-            </button>
-            <ConfirmModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              onConfirm={() => void handleRemoveUser(context.auth.idUser as number)}
-              title="Quitter le groupe"
-              message="Es-tu sûr de vouloir quitter le groupe ?"
-            />
-          </>
-        )}
-        
+    <div className="flex flex-col h-full w-full bg-slate-50 overflow-hidden text-sm text-slate-700">
+      {context?.auth.idUser != null && (
         <ConfirmModal
-          isOpen={configToDelete !== null}
-          onClose={() => setConfigToDelete(null)}
-          onConfirm={() => {
-            if (configToDelete !== null) {
-              void (async () => {
-                try {
-                  await handleDeleteConfig(configToDelete);
-                } catch (err) {
-                  console.error("Erreur suppression config", err);
-                }
-                setConfigToDelete(null);
-              })();
-            }
-          }}
-          title="Supprimer la configuration"
-          message="Es-tu sûr de vouloir supprimer cette configuration ?"
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onConfirm={() => void handleRemoveUser(context.auth.idUser as number)}
+          title="Quitter le groupe"
+          message="Es-tu sûr de vouloir quitter le groupe ?"
         />
+      )}
 
-        <div>
-          {context?.isLogged && (
-            <Link
-              to="/add-group"
-              className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 transition-colors 2xl:border-t-8"
-            >
-              <SquarePlus />
-            </Link>
+      <ConfirmModal
+        isOpen={configToDelete !== null}
+        onClose={() => setConfigToDelete(null)}
+        onConfirm={() => {
+          if (configToDelete !== null) {
+            void (async () => {
+              try {
+                await handleDeleteConfig(configToDelete);
+              } catch (err) {
+                console.error("Erreur suppression config", err);
+              }
+              setConfigToDelete(null);
+            })();
+          }
+        }}
+        title="Supprimer la configuration"
+        message="Es-tu sûr de vouloir supprimer cette configuration ?"
+      />
+
+      <div className="flex-1 min-h-0">
+        <main className="h-full overflow-y-scroll overflow-x-hidden relative p-6 bg-slate-50" id="widget-desktop">
+        <div className="mb-4 flex items-center gap-2 flex-wrap">
+          <SelectGroupe key={`select-${refreshVersion}`} />
+          {isGuest && <p className="inline-flex bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-1 text-xs font-medium">Invité</p>}
+          {!isGuest && <p className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2 py-1 text-xs font-medium">Membre</p>}
+          <div className="flex items-center gap-2">
+            <ButtonAdminGroupe key={`admin-${refreshVersion}`} />
+            {context?.isLogged && (
+              <Link
+                to="/add-group"
+                className="p-2 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Ajouter un groupe"
+              >
+                <SquarePlus size={20} />
+              </Link>
+            )}
+            {context?.auth.idUser != null && (
+              <button
+                className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                onClick={() => setIsModalOpen(true)}
+                title="Quitter le groupe"
+              >
+                <LogOut size={20} />
+              </button>
+            )}
+          </div>
+          {erreur && (
+            <div className="ml-auto px-3 py-2 bg-red-50 text-red-700 rounded-lg border border-red-200 text-xs font-medium">
+              {erreur}
+            </div>
           )}
         </div>
-
-        {erreur && (
-          <div className="ml-auto px-4 py-1 bg-red-100 text-red-700 rounded-md border border-red-200 font-medium">
-            {erreur}
-          </div>
-        )}
-      </header>
-
-      <main className="flex-1 overflow-y-scroll overflow-x-hidden relative p-4 bg-slate-100" id="widget-desktop">
         <ReactGridLayout
           className="layout"
           layout={layout}
@@ -376,14 +413,14 @@ export default function DashboardPage() {
         </ReactGridLayout>
 
         <div
-          className={`fixed top-0 right-0 h-full bg-white shadow-[-4px_0_15px_rgba(0,0,0,0.1)] border-l border-gray-200 transition-transform duration-300 z-[100] ${
+          className={`fixed top-0 right-0 h-full bg-white shadow-[-4px_0_15px_rgba(15,23,42,0.08)] border-l border-slate-100 transition-transform duration-300 z-100 ${
             isSidebarOpen ? "translate-x-0" : "translate-x-full"
           }`}
           style={{ width: "250px" }}
         >
-          <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-slate-800 text-white">
+          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 text-slate-800">
             <h3 className="font-bold">Ajouter un Widget</h3>
-            <button onClick={() => setIsSidebarOpen(false)} className="hover:text-red-400">
+            <button onClick={() => setIsSidebarOpen(false)} className="hover:text-red-500">
               <X size={20} />
             </button>
           </div>
@@ -411,18 +448,19 @@ export default function DashboardPage() {
 
         {configs.length > 0 && (<button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className={`fixed bottom-16 right-6 p-3 rounded-full shadow-lg text-white transition-all z-[110] ${
+          className={`fixed bottom-16 right-6 p-3 rounded-full shadow-lg text-white transition-all hover:-translate-y-0.5 z-110 ${
             isSidebarOpen
               ? "bg-red-500 hover:bg-red-600 rotate-45"
-              : "bg-green-600 hover:bg-green-700"
+              : "bg-green-600 hover:bg-green-700 hover:shadow-xl"
           }`}
           title="Ajouter un widget"
         >
           <SquarePlus size={24} />
         </button>)}
-      </main>
+        </main>
+      </div>
 
-      <footer className="h-10 bg-gray-200 border-t border-gray-300 flex items-end px-2 shrink-0 gap-1 overflow-x-auto select-none relative z-50">
+      <footer className="h-11 bg-slate-50 border-t border-slate-100 flex items-end px-2 shrink-0 gap-1 overflow-x-auto select-none relative z-50">
         {configs.map((config) => (
           <div
             key={config.id}
@@ -430,10 +468,10 @@ export default function DashboardPage() {
               setConfigCurrent(config.id);
               setErreur("");
             }}
-            className={`px-4 rounded-t-sm shadow-sm flex items-center gap-2 cursor-pointer transition-all ${
+            className={`px-4 rounded-t-lg shadow-sm border border-slate-100 border-b-0 flex items-center gap-2 cursor-pointer transition-all ${
               configCurrent === config.id
-                ? "bg-white border-t-2 border-green-600 py-1.5 font-semibold text-gray-800"
-                : "bg-gray-300 py-1 text-gray-600 hover:bg-gray-100 font-medium"
+                ? "bg-white border-t-2 border-blue-600 py-1.5 font-semibold text-slate-800"
+                : "bg-slate-100 py-1 text-slate-500 hover:bg-white font-medium"
             }`}
           >
             <span>{config.nom}</span>
@@ -442,7 +480,7 @@ export default function DashboardPage() {
                 e.stopPropagation();
                 setConfigToDelete(config.id);
               }}
-              className="text-gray-400 hover:text-red-500 transition-colors"
+              className="text-slate-400 hover:text-red-500 transition-colors"
               title="Supprimer la configuration"
             >
               <X size={14} strokeWidth={2.5} />
@@ -454,7 +492,7 @@ export default function DashboardPage() {
           <input
             autoFocus
             type="text"
-            className="px-3 py-1 text-gray-800 bg-white rounded-t-sm font-semibold ml-1 outline-none border-t-2 border-blue-500 w-32 mb-[1px]"
+            className="px-3 py-1 text-slate-800 bg-white rounded-t-lg font-semibold ml-1 outline-none border border-t-2 border-blue-500 w-32 mb-px"
             value={newConfigName}
             onChange={(e) => setNewConfigName(e.target.value)}
             onKeyDown={(e) => {
@@ -472,7 +510,7 @@ export default function DashboardPage() {
         ) : (
           <button
             onClick={() => setIsCreatingConfig(true)}
-            className="px-3 py-1.5 text-gray-600 hover:text-black hover:bg-gray-300 rounded-t-sm font-bold ml-1"
+            className="px-3 py-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-t-lg font-bold ml-1"
           >
             +
           </button>

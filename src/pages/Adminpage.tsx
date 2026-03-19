@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import {
   useDeleteGroupe,
   useDeleteUser,
@@ -10,8 +10,7 @@ import {
   useUpdateConfig,
 } from "../services/membreService";
 import type { User } from "../types/User";
-import { AuthContext } from "../context/AuthContext";
-import { CircleX, TrashIcon } from "lucide-react";
+import { CircleX } from "lucide-react";
 
 type Groupe = {
   id: number;
@@ -22,14 +21,12 @@ export default function AdminPage() {
   const getConfig = useGetConfig();
   const getAllUser = useGetAllUser();
   const updateConfig = useUpdateConfig();
-  const context = useContext(AuthContext);
   const RemoveUser = useDeleteUser();
   const GetGroupesByUser = useGetGroupesByUser();
   const GetDateLastCo = useGetDateLastCoByUser();
   const GetAllGroupes = useGetAllGroupes();
   const RemoveGroupe = useDeleteGroupe();
 
-  const [erreur, setErreur] = useState("");
   const [allUser, setAllUser] = useState<User[]>([]);
   const [allGroupes, setAllGroupes] = useState<Groupe[]>([]);
   const [userGroups, setUserGroups] = useState<Record<number, Groupe[]>>({});
@@ -116,7 +113,7 @@ export default function AdminPage() {
       setUserGroups(groupsMap);
       setUserDates(datesMap);
     } catch (err) {
-      setErreur("le groupes ou l'utilisateur n'existe pas");
+      console.error("Erreur lors du chargement des utilisateurs/groupes", err);
     }
   };
 
@@ -179,71 +176,64 @@ export default function AdminPage() {
 
   return (
     <div className="h-full w-full overflow-y-auto bg-slate-50">
-      <div className="p-8 max-w-4xl mx-auto">
-        <div className="p-8 max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Panneau d'Administration </h1>
+      <div className="p-8 max-w-5xl mx-auto space-y-6">
+        <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm max-w-3xl mx-auto">
+          <h1 className="text-3xl font-bold text-slate-800 mb-6">Panneau d'Administration</h1>
 
           <form
             onSubmit={handleSauvegarder}
-            className="bg-white p-6 rounded-lg shadow-md flex flex-col gap-4"
+            className="flex flex-col gap-4"
           >
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
                 Email de l'Administrateur
               </label>
               <input
                 type="email"
                 value={emailAdmin}
                 onChange={(e) => setEmailAdmin(e.target.value)}
-                className="w-full border p-2 rounded"
+                className="w-full border border-slate-200 p-2 rounded-lg"
               />
             </div>
 
             {tabValues.map((value, index) => (
               <div key={index}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   {"Nombre max de " + tabLabel[index]}
                 </label>
                 <input
                   type="number"
                   value={value ?? 0}
                   onChange={(e) => tabFonct[index](Number(e.target.value))}
-                  className="w-full border p-2 rounded"
+                  className="w-full border border-slate-200 p-2 rounded-lg"
                 />
               </div>
             ))}
             <button
               type="submit"
-              className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
               Sauvegarder les modifications
             </button>
           </form>
         </div>
-        <div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
           <input
             type="text"
             placeholder="Rechercher par nom, prénom ou id..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded w-full mb-4"
+            className="border border-slate-200 p-2 rounded-lg w-full mb-4"
           />
-          <ul>
+          <ul className="space-y-2">
             {filteredUsers.map((user) => (
               <li key={user.email}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.4rem",
-                  }}
-                  className="m-5"
-                >
-                  {user.nom} {user.prenom} : id = {user.id}{" "}
-                  <button onClick={() => handleRemoveUser(user.id)}>
-                    <CircleX />
+                <div className="flex items-center gap-2 p-3 rounded-xl border border-slate-100 bg-slate-50 text-slate-700">
+                  {user.nom} {user.prenom} : id = {user.id}
+                  <button onClick={() => handleRemoveUser(user.id)} className="text-red-500 hover:text-red-600">
+                    <CircleX size={18} />
                   </button>
-                  Groupes ={" "}
+                  <span className="text-slate-500">Groupes =</span>
                   {(userGroups[user.id] ?? []).map((g) => g.id).join(", ")}, co
                   = {userDates[user.id] ?? ""}
                 </div>
@@ -251,31 +241,24 @@ export default function AdminPage() {
             ))}
 
             {filteredUsers.length === 0 && (
-              <li className="text-gray-500 m-5 italic">
+              <li className="text-slate-500 italic p-2">
                 Aucun utilisateur trouvé pour "{searchTerm}".
               </li>
             )}
           </ul>
         </div>
-        <div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
           <input
             type="text"
             placeholder="Rechercher par nom ou id..."
             value={searchTermGroupe}
             onChange={(e) => setSearchTermGroupe(e.target.value)}
-            className="border p-2 rounded w-full mb-4"
+            className="border border-slate-200 p-2 rounded-lg w-full mb-4"
           />
-          <ul>
+          <ul className="space-y-2">
             {filteredGroupes.map((group) => (
               <li key={group.id}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.4rem",
-                  }}
-                  className="m-5"
-                >
+                <div className="flex items-center gap-2 p-3 rounded-xl border border-slate-100 bg-slate-50 text-slate-700">
                   {group.nom}
                   {" : id = "}
                   {group.id}
@@ -286,15 +269,15 @@ export default function AdminPage() {
                     )
                     .map(([userId]) => userId)
                     .join(", ")}
-                  <button onClick={() => handleRemoveGroupe(group.id)}>
-                    <CircleX />
+                  <button onClick={() => handleRemoveGroupe(group.id)} className="text-red-500 hover:text-red-600">
+                    <CircleX size={18} />
                   </button>
                 </div>
               </li>
             ))}
 
             {filteredGroupes.length === 0 && (
-              <li className="text-gray-500 m-5 italic">
+              <li className="text-slate-500 italic p-2">
                 Aucun groupe trouvé pour "{searchTermGroupe}".
               </li>
             )}

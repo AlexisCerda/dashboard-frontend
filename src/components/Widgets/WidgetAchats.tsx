@@ -13,7 +13,7 @@ import {
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
-import { CircleX } from "lucide-react"; 
+import { CircleX, ChevronUp, ChevronDown, CirclePlus } from "lucide-react"; 
 import EditableField from "../EditableField";
 
 // L'interface exacte que tu as fournie
@@ -42,6 +42,7 @@ export default function WidgetAchats({ onClose, isGuest }: { onClose?: () => voi
   const [quantite, setQuantite] = useState<number>(1);
   const [etat, setEtat] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
 
   const context = useContext(AuthContext);
   const getAchatGroupe = useGetAchatGroupe();
@@ -96,6 +97,7 @@ export default function WidgetAchats({ onClose, isGuest }: { onClose?: () => voi
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
       webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
           // ⚠️ Assure-toi que Spring Boot envoie bien "REFRESH_ACHATS" !
@@ -106,8 +108,17 @@ export default function WidgetAchats({ onClose, isGuest }: { onClose?: () => voi
       },
     });
     refreshData();
-    stompClient.activate();
-    return () => { void stompClient.deactivate(); };
+
+    const activationTimer = window.setTimeout(() => {
+      stompClient.activate();
+    }, 150);
+
+    return () => {
+      window.clearTimeout(activationTimer);
+      if (stompClient.active) {
+        void stompClient.deactivate();
+      }
+    };
   }, [context?.groupeActifId, context?.auth.idUser]);
 
   useEffect(() => {
@@ -143,31 +154,52 @@ export default function WidgetAchats({ onClose, isGuest }: { onClose?: () => voi
   return (
     <WidgetFrame
       title="Demandes d'Achats"
-      headerColor="bg-emerald-600" // Un joli vert pour les achats
+      headerColor="bg-emerald-600 text-white border-b border-emerald-700"
       onClose={onClose}
     >
       <div className="flex flex-col h-full p-3">
-        
-        <div className="flex items-center gap-3 mb-4">
-          <input
-            type="text"
-            placeholder="Rechercher un achat, matériel, demandeur..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded flex-1 min-w-0"
-          />
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              type="button"
+              onClick={() => setIsSearchCollapsed((prev) => !prev)}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+              title={isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"}
+            >
+              {isSearchCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            </button>
+            {!isGuest && (
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all hover:-translate-y-0.5 hover:shadow-md"
+                title="Ajouter"
+              >
+                <CirclePlus/>
+              </button>
+            )}
+          </div>
+          {!isSearchCollapsed && (
+            <input
+              type="text"
+              placeholder="Rechercher un achat, matériel, demandeur..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border border-emerald-200 bg-emerald-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+            />
+          )}
         </div>
 
         <ul className="space-y-2 flex-1 overflow-y-auto">
           {filteredAchats.map((a) => (
             <li
               key={a.id}
-              className="flex items-center gap-2 text-sm p-2 hover:bg-slate-50 rounded"
+              className="flex flex-col xl:flex-row xl:items-start gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200"
             >
               <div className="flex flex-col flex-1 gap-1">
                 
                 {/* MATÉRIEL ET QUANTITÉ */}
-                <div className="font-semibold text-slate-800 flex items-center gap-1">
+                <div className="font-semibold text-slate-800 flex flex-wrap items-center gap-1">
                   <span className="text-gray-400 font-normal">Qte:</span>
                   <EditableField
                     value={String(a.quantite)} 
@@ -185,7 +217,7 @@ export default function WidgetAchats({ onClose, isGuest }: { onClose?: () => voi
                 </div>
 
                 {/* MARQUE ET RÉFÉRENCE */}
-                <div className="text-xs text-slate-500 flex items-center gap-2">
+                <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
                   <EditableField
                     value={a.marqueMateriel} 
                     onSave={(newVal) => { a.marqueMateriel = newVal; handleUpdateField(a); }} 
@@ -203,7 +235,7 @@ export default function WidgetAchats({ onClose, isGuest }: { onClose?: () => voi
                 </div>
 
                 {/* DEMANDEUR */}
-                <div className="text-[11px] text-gray-500 flex gap-1 mt-1">
+                <div className="text-[11px] text-gray-500 flex flex-wrap gap-1 mt-1">
                   <span>Demandé par :</span>
                   <EditableField
                     value={a.prenomPersonne} 
@@ -231,7 +263,7 @@ export default function WidgetAchats({ onClose, isGuest }: { onClose?: () => voi
                         await refreshData();
                       }
                     }}
-                    className="text-xs p-1 rounded border border-gray-300 outline-none"
+                    className="text-xs p-1.5 rounded-lg border border-emerald-200 outline-none bg-emerald-50 text-emerald-800"
                   >
                     {etats.map((etat) => (
                       <option key={etat} value={etat}>
@@ -240,7 +272,7 @@ export default function WidgetAchats({ onClose, isGuest }: { onClose?: () => voi
                     ))}
                   </select>
                 ) : (
-                  <p className="text-xs bg-gray-200 px-2 py-1 rounded">{a.etat.replace("_", " ").toLowerCase()}</p>
+                  <p className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded-full font-medium">{a.etat.replace("_", " ").toLowerCase()}</p>
                 )
               )}
 
@@ -248,7 +280,7 @@ export default function WidgetAchats({ onClose, isGuest }: { onClose?: () => voi
               {!isGuest && (
                 <button 
                   onClick={() => handleDeleteAchat(a.id)} 
-                  className="hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors ml-auto"
+                  className="hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors xl:ml-auto"
                   title="Supprimer cet achat"
                 >
                   <CircleX size={18} />
@@ -261,14 +293,6 @@ export default function WidgetAchats({ onClose, isGuest }: { onClose?: () => voi
           )}
         </ul>
         
-        {!isGuest && (
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="mt-2 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 rounded transition-colors"
-          >
-            + Demander un Achat
-          </button>
-        )}
       </div>
       
       <ModalFormulaire

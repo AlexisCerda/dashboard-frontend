@@ -20,7 +20,7 @@ export function AddGroupePage(){
         setNombreGroupe(0);
         try {
           const resultatGroupe = await GetGroupe();
-          resultatGroupe.forEach(() => setNombreGroupe(nombreGroupe + 1))
+          resultatGroupe.forEach(() => setNombreGroupe(nombreGroupe + 1));
         } catch (err) {
           setErreur("le groupes ou l'utilisateur n'existe pas");
         }
@@ -48,7 +48,6 @@ export function AddGroupePage(){
       setErreur("Utilisateur non authentifié.");
       return;
     }
-    console.log(nombreGroupe + " " + maxGroupe);
     
     if (nombreGroupe >= maxGroupe) {
       setErreur("Vous avez atteint le nombre maximum de groupes.");
@@ -61,37 +60,42 @@ export function AddGroupePage(){
       setErreur("Erreur lors de la création du groupe.");
     }
   }
-  return <>
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {erreur && (
-        <div className="p-3 bg-red-100 text-red-700 text-sm rounded-lg border border-red-200">
-          {erreur}
-        </div>
-      )}
-      <div>
-        <label
-          htmlFor="nom"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Nom du groupe
-        </label>
-        <input
-          id="nom"
-          type="text"
-          required
-          value={nom}
-          onChange={(e) => setNom(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-          placeholder="SIDSIC"
-        />
-      </div>
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+        <h1 className="text-2xl font-bold text-slate-800 mb-6 text-center">Créer un groupe</h1>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {erreur && (
+            <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
+              {erreur}
+            </div>
+          )}
+          <div>
+            <label
+              htmlFor="nom"
+              className="block text-sm font-medium text-slate-700 mb-1"
+            >
+              Nom du groupe
+            </label>
+            <input
+              id="nom"
+              type="text"
+              required
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none transition-all"
+              placeholder="SIDSIC"
+            />
+          </div>
 
-      <button
-        type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200"
-      >
-        Créer un groupe
-      </button>
-    </form>
-  </>;
+          <button
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-all hover:-translate-y-0.5 hover:shadow-md duration-200"
+          >
+            Créer un groupe
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 }

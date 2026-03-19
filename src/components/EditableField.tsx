@@ -20,7 +20,7 @@ export default function EditableField({
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value || "");
 
-  if (isGuest) return <span className="px-1">{value || placeholder}</span>;
+  if (isGuest) return <span className="px-1 text-slate-600">{value || placeholder}</span>;
 
   const handleBlur = () => {
     setIsEditing(false);
@@ -45,7 +45,12 @@ export default function EditableField({
         value={tempValue}
         onChange={(e) => setTempValue(e.target.value)}
         onBlur={handleBlur}
-        className="w-full border-b-2 border-blue-500 outline-none px-1 bg-blue-50 text-slate-800 font-medium min-h-[60px]"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        data-gramm="false"
+        className="w-full border border-slate-200 rounded-md outline-none px-2 py-1 bg-slate-50 text-slate-700 font-medium min-h-15 focus:border-blue-300 focus:bg-blue-50"
       />
     ) : (
       <input
@@ -55,7 +60,7 @@ export default function EditableField({
         onChange={(e) => setTempValue(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className="border-b-2 border-blue-500 outline-none px-1 bg-blue-50 text-slate-800 font-medium"
+        className="border border-slate-200 rounded-md outline-none px-2 py-1 bg-slate-50 text-slate-700 font-medium focus:border-blue-300 focus:bg-blue-50"
       />
     );
   }
@@ -66,7 +71,7 @@ export default function EditableField({
         setTempValue(value || "");
         setIsEditing(true);
       }} 
-      className={`cursor-pointer hover:bg-slate-200 px-1 rounded transition-colors break-all ${multiline ? "whitespace-pre-wrap" : ""}`}
+      className={`cursor-pointer hover:bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-md transition-colors wrap-break-word ${multiline ? "whitespace-pre-wrap" : "whitespace-normal"}`}
       title="Cliquer pour modifier"
     >
       {value || placeholder}

@@ -13,7 +13,7 @@ import {
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
-import { CircleX } from "lucide-react"; 
+import { CircleX, ChevronUp, ChevronDown, CirclePlus } from "lucide-react"; 
 import EditableField from "../EditableField";
 
 export interface MouvementDTO {
@@ -36,6 +36,7 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
   const [dateDepart, setDateDepart] = useState("");
   const [etat, setEtat] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
 
   const context = useContext(AuthContext);
   const getMouvementGroupe = useGetMouvementGroupe();
@@ -85,6 +86,7 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
       webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
           if (message.body === "REFRESH_MOUVEMENTS") { 
@@ -94,8 +96,17 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
       },
     });
     refreshData();
-    stompClient.activate();
-    return () => { void stompClient.deactivate(); };
+
+    const activationTimer = window.setTimeout(() => {
+      stompClient.activate();
+    }, 150);
+
+    return () => {
+      window.clearTimeout(activationTimer);
+      if (stompClient.active) {
+        void stompClient.deactivate();
+      }
+    };
   }, [context?.groupeActifId, context?.auth.idUser]);
 
   useEffect(() => {
@@ -145,29 +156,50 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
   return (
     <WidgetFrame
       title="Mouvements (Arrivées / Départs)"
-      headerColor="bg-purple-600"
+      headerColor="bg-purple-600 text-white border-b border-purple-700"
       onClose={onClose}
     >
       <div className="flex flex-col h-full p-3">
-        
-        <div className="flex items-center gap-3 mb-4">
-          <input
-            type="text"
-            placeholder="Rechercher une personne, une date..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded flex-1 min-w-0"
-          />
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              type="button"
+              onClick={() => setIsSearchCollapsed((prev) => !prev)}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+              title={isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"}
+            >
+              {isSearchCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            </button>
+            {!isGuest && (
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold transition-all hover:-translate-y-0.5 hover:shadow-md"
+                title="Ajouter"
+              >
+                <CirclePlus/>
+              </button>
+            )}
+          </div>
+          {!isSearchCollapsed && (
+            <input
+              type="text"
+              placeholder="Rechercher une personne, une date..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border border-purple-200 bg-purple-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-purple-200"
+            />
+          )}
         </div>
 
         <ul className="space-y-2 flex-1 overflow-y-auto">
           {filteredMouvements.map((m) => (
             <li
               key={m.id}
-              className="flex items-center gap-2 text-sm p-2 hover:bg-slate-50 rounded"
+              className="flex flex-col xl:flex-row xl:items-start gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200"
             >
               <div className="flex flex-col flex-1">
-                <div className="font-semibold text-slate-800 flex gap-1">
+                <div className="font-semibold text-slate-800 flex flex-wrap gap-1">
                   <EditableField
                     value={m.prenom} 
                     onSave={(newVal) => { m.prenom = newVal; handleUpdateField(m); }} 
@@ -182,7 +214,7 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
                   />
                 </div>
                 
-                <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
                   <div className="flex items-center gap-1 text-green-600">
                     <span title="Arrivée">▶</span>
                     <EditableField
@@ -213,7 +245,7 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
                         await refreshData();
                       }
                     }}
-                    className="text-xs p-1 rounded border border-gray-300 outline-none"
+                    className="text-xs p-1.5 rounded-lg border border-purple-200 outline-none bg-purple-50 text-purple-800"
                   >
                     {etats.map((etat) => (
                       <option key={etat} value={etat}>
@@ -222,14 +254,14 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
                     ))}
                   </select>
                 ) : (
-                  <p className="text-xs bg-gray-200 px-2 py-1 rounded">{m.etat.replace("_", " ").toLowerCase()}</p>
+                  <p className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-1 rounded-full font-medium">{m.etat.replace("_", " ").toLowerCase()}</p>
                 )
               )}
 
               {!isGuest && (
                 <button 
                   onClick={() => handleDeleteMouvement(m.id)} 
-                  className="hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors ml-auto"
+                  className="hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors xl:ml-auto"
                 >
                   <CircleX size={18} />
                 </button>
@@ -241,14 +273,6 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
           )}
         </ul>
         
-        {!isGuest && (
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="mt-2 w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 rounded transition-colors"
-          >
-            + Ajouter une personne
-          </button>
-        )}
       </div>
       
       <ModalFormulaire

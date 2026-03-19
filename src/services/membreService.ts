@@ -496,7 +496,7 @@ export const useUpdateConfig = ()=>{
   const UpdateConfig = async (emailAdmin : string, maxTaches : number, maxGroupes : number, maxNotes : number, maxMouvements : number, maxAchats : number, maxPrets : number, maxConfigurations : number, maxImages : number) => {
     try {
       const response = await fetch(`${API_URL}/config`, {
-        method: "PATCH",
+        method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify({
         emailAdmin : emailAdmin,
