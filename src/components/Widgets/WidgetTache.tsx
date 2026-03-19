@@ -12,6 +12,7 @@ import {
   useGetTacheGroupe, 
   useGetTacheMembre, 
   useUpdateEtatTache, 
+  useUpdateTache, 
   type MembreDTO, 
   type TacheDTO 
 } from "../../services/WidgetService";
@@ -20,6 +21,7 @@ import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
 import { CircleX, UserRoundX, Check } from "lucide-react"; 
 import { useGetUserByGroupe } from "../../services/membreService";
+import EditableField from "../EditableField";
 
 export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => void; isGuest?: boolean }) {
   const [taches, setTaches] = useState<TacheDTO[]>([]);
@@ -49,6 +51,7 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
   const RemoveMembre = useDeleteMembreFromTache();
   const addMembreToTache = useAddMembreToTache();
   const GetUsersbyGroupe = useGetUserByGroupe();
+  const UpdateTache = useUpdateTache();
 
   useEffect(() => {
     showMyTasksRef.current = showMyTasksOnly;
@@ -102,6 +105,12 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
 
   const handleRemoveMembre = async (tacheId: number, membreId: number) => {
     await RemoveMembre(tacheId, membreId);
+    refreshData();
+  };
+
+  const handleUpdateField = async (tache: TacheDTO) => {
+    if (isGuest) return;
+    await UpdateTache(tache);
     refreshData();
   };
 
@@ -169,13 +178,29 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
   }, [showMyTasksOnly]);
 
   const filteredTaches = taches.filter((tache: TacheDTO) => {
-    const fullName = `${tache.nom} ${tache.description} ${tache.etat} ${tache.dateDebut} ${tache.dateLimite}`.toLowerCase();
+    const fullName = `${tache.nom} ${tache.description} ${tache.etat.replace("_", " ").toLowerCase()} ${tache.dateDebut} ${tache.dateLimite}`.toLowerCase();
     return fullName.includes(searchTerm.toLowerCase());
   });
 
   const filteredMembresAdd = membresGroupe.filter((m) => 
     `${m.nom} ${m.prenom}`.toLowerCase().includes(searchTermAdd.toLowerCase())
   );
+
+  const formatDate = (dateString: string) => {
+    try {
+      if (!dateString) return "";
+      if (!dateString.includes("/")) return dateString;
+      console.log(dateString);
+      const date = dateString.split("/");
+      const day = String(date[0]).padStart(2, "0");
+      const month = String(date[1]).padStart(2, "0");
+      const year = date[2];
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error(error);
+      return dateString;
+    }
+  };
 
   return (
     <WidgetFrame
@@ -210,9 +235,17 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
               key={tache.id}
               className="flex items-center gap-2 text-sm p-2 hover:bg-slate-50 rounded"
             >
-              {tache.nom}{" "}
-              {tache.description}{" "}
-              {!isGuest ? (
+              <EditableField
+                value={tache.nom} 
+                onSave={(newVal) => (tache.nom = newVal, handleUpdateField(tache))} 
+                isGuest={isGuest || showMyTasksOnly}
+              />{" "}
+              <EditableField
+                value={tache.description} 
+                isGuest={isGuest || showMyTasksOnly}
+                onSave={(newVal) => { tache.description = newVal; handleUpdateField(tache); }} 
+              />{" "}
+              {!isGuest && !showMyTasksOnly ? (
                 <select value={tache.etat} onChange={async (e) => {
                   if (tache.id !== undefined) {
                     await updateEtatTache(tache.id, e.target.value);
@@ -228,13 +261,23 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
               ) : (
                 <p>{tache.etat.replace("_", " ").toLowerCase()}</p>
               )}{" "}
-              {tache.dateDebut}{" "}
-              {tache.dateLimite}{" "}
+              <EditableField
+                value={tache.dateDebut} 
+                type="date"
+                isGuest={isGuest || showMyTasksOnly}
+                onSave={(newVal) => { tache.dateDebut = formatDate(newVal); handleUpdateField(tache); }} 
+              />{" "}
+              <EditableField
+                value={tache.dateLimite} 
+                type="date"
+                isGuest={isGuest || showMyTasksOnly}
+                onSave={(newVal) => { tache.dateLimite = formatDate(newVal); handleUpdateField(tache); }} 
+              />{" "}
               <div className="flex -space-x-2 gap-2">
                 {tache.id !== undefined && membres[tache.id]?.map((membre: MembreDTO) => (
                   <span className="flex items-center gap-1 bg-blue-100 text-blue-800 text-[10px] pl-2 pr-1 py-0.5 rounded-full border border-white" key={membre.id} title={`${membre.nom} ${membre.prenom}`}>
                     {membre.nom}{" "}{membre.prenom}{" "}{membre.id} 
-                    {!isGuest && (
+                    {!isGuest && !showMyTasksOnly && (
                       <button 
                         onClick={() => handleRemoveMembre(tache.id as number, membre.id as number)} 
                         className="hover:text-red-600 hover:bg-red-100 text-red-500 rounded-full p-0.5 transition-colors"
@@ -246,7 +289,7 @@ export default function WidgetTaches({ onClose, isGuest }: { onClose?: () => voi
                   </span>
                 ))}
               </div>
-              {!isGuest && (
+              {!isGuest && !showMyTasksOnly && (
                 <button onClick={() => handleDeleteTache(tache.id as number)} className="hover:text-red-600 text-red-500 font-medium py-2 rounded transition-colors ml-auto">
                   <CircleX/>
                 </button>

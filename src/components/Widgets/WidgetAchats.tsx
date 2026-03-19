@@ -1,42 +1,382 @@
+import { useEffect, useState } from "react";
 import WidgetFrame from "../WidgetFrame";
-import { CheckCircle2, Circle } from "lucide-react";
+import { useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
+import { 
+  useCreateAchat, 
+  useDeleteAchat, 
+  useGetAllEtatsAchat, 
+  useGetAchatGroupe, 
+  useUpdateEtatAchat, 
+  useUpdateAchat, 
+} from "../../services/WidgetService";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
+import ModalFormulaire from "../ModalFormulaire";
+import { CircleX } from "lucide-react"; 
+import EditableField from "../EditableField";
 
-export default function WidgetAchats({ onClose, isGuest = true }: { onClose?: () => void; isGuest?: boolean }) {
-  const taches = [
-    { id: 1, titre: "Mettre à jour le serveur VPN", fait: false },
-    { id: 2, titre: "Créer les comptes", fait: true },
-  ];
+// L'interface exacte que tu as fournie
+export interface AchatDTO {
+  id: number;
+  nomMateriel: string;
+  marqueMateriel: string;
+  reference: string;
+  nomPersonne: string;
+  prenomPersonne: string;
+  quantite: number;
+  etat: string;
+}
+
+export default function WidgetAchats({ onClose, isGuest }: { onClose?: () => void; isGuest?: boolean }) {
+  const [achats, setAchats] = useState<AchatDTO[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [etats, setEtats] = useState<string[]>([]); 
+  
+  // États du formulaire
+  const [nomMateriel, setNomMateriel] = useState("");
+  const [marqueMateriel, setMarqueMateriel] = useState("");
+  const [reference, setReference] = useState("");
+  const [nomPersonne, setNomPersonne] = useState("");
+  const [prenomPersonne, setPrenomPersonne] = useState("");
+  const [quantite, setQuantite] = useState<number>(1);
+  const [etat, setEtat] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const context = useContext(AuthContext);
+  const getAchatGroupe = useGetAchatGroupe();
+  const updateEtatAchat = useUpdateEtatAchat();
+  const getAllEtatsAchat = useGetAllEtatsAchat();
+  const createAchat = useCreateAchat();
+  const deleteAchat = useDeleteAchat();
+  const updateAchat = useUpdateAchat();
+
+  const handleSubmitAchat = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    const data: AchatDTO = {
+      id: 0,
+      nomMateriel,
+      marqueMateriel,
+      reference,
+      nomPersonne,
+      prenomPersonne,
+      quantite: Number(quantite),
+      etat: etat,
+    };
+
+    await createAchat(data);
+    await refreshData();
+    
+    setIsModalOpen(false);
+    // Reset du form
+    setNomMateriel("");
+    setMarqueMateriel("");
+    setReference("");
+    setNomPersonne("");
+    setPrenomPersonne("");
+    setQuantite(1);
+    if (etats.length > 0) setEtat(etats[0]);
+  };
+
+  const handleDeleteAchat = async (id: number) => {
+    await deleteAchat(id);
+    refreshData();
+  };
+
+  const handleUpdateField = async (achat: AchatDTO) => {
+    if (isGuest) return;
+    await updateAchat(achat);
+    refreshData();
+  };
+
+  useEffect(() => {
+    if (!context?.groupeActifId || context?.auth.idUser == null) return;
+
+    const frequence = `/topic/groupe/${context.groupeActifId}`;
+    const stompClient = new Client({
+      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      onConnect: () => {
+        stompClient.subscribe(frequence, (message) => {
+          // ⚠️ Assure-toi que Spring Boot envoie bien "REFRESH_ACHATS" !
+          if (message.body === "REFRESH_ACHATS") { 
+            refreshData();
+          }
+        });
+      },
+    });
+    refreshData();
+    stompClient.activate();
+    return () => { void stompClient.deactivate(); };
+  }, [context?.groupeActifId, context?.auth.idUser]);
+
+  useEffect(() => {
+    const fetchEtats = async () => {
+      try {
+        const resultat = await getAllEtatsAchat();
+        setEtats(resultat);
+        if (resultat.length > 0 && !etat) {
+          setEtat(resultat[0]);
+        }
+      } catch (error) {
+        console.error("Erreur récupération états", error);
+      }
+    };
+    fetchEtats();
+  }, []);
+
+  async function refreshData() {
+    if (!context?.groupeActifId) return;
+    try {
+      const resultatGroupe = await getAchatGroupe();
+      setAchats(resultatGroupe || []);
+    } catch (error) {
+      console.error("Erreur", error);
+    }
+  }
+
+  const filteredAchats = achats.filter((a) => {
+    const searchString = `${a.nomMateriel} ${a.marqueMateriel} ${a.reference} ${a.prenomPersonne} ${a.nomPersonne} ${a.etat.replace("_", " ")}`.toLowerCase();
+    return searchString.includes(searchTerm.toLowerCase());
+  });
 
   return (
     <WidgetFrame
-      title="Achats"
-      headerColor="bg-blue-600"
+      title="Demandes d'Achats"
+      headerColor="bg-emerald-600" // Un joli vert pour les achats
       onClose={onClose}
-      >
-        {isGuest && (
-          <p>ICI C MOIIIII</p>
-        )}
-      <ul className="space-y-2 p-3">
-        {taches.map((tache) => (
-          <li
-            key={tache.id}
-            className="flex items-center gap-2 text-sm p-2 hover:bg-slate-50 rounded"
-          >
-            {tache.fait ? (
-              <CheckCircle2 className="text-green-500 w-4 h-4" />
-            ) : (
-              <Circle className="text-gray-400 w-4 h-4" />
-            )}
-            <span
-              className={
-                tache.fait ? "line-through text-gray-400" : "text-gray-700"
-              }
+    >
+      <div className="flex flex-col h-full p-3">
+        
+        <div className="flex items-center gap-3 mb-4">
+          <input
+            type="text"
+            placeholder="Rechercher un achat, matériel, demandeur..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border p-2 rounded flex-1 min-w-0"
+          />
+        </div>
+
+        <ul className="space-y-2 flex-1 overflow-y-auto">
+          {filteredAchats.map((a) => (
+            <li
+              key={a.id}
+              className="flex items-center gap-2 text-sm p-2 hover:bg-slate-50 rounded"
             >
-              {tache.titre}
-            </span>
-          </li>
-        ))}
-      </ul>
+              <div className="flex flex-col flex-1 gap-1">
+                
+                {/* MATÉRIEL ET QUANTITÉ */}
+                <div className="font-semibold text-slate-800 flex items-center gap-1">
+                  <span className="text-gray-400 font-normal">Qte:</span>
+                  <EditableField
+                    value={String(a.quantite)} 
+                    type="number"
+                    onSave={(newVal) => { a.quantite = Number(newVal); handleUpdateField(a); }} 
+                    isGuest={isGuest}
+                  />
+                  <span>-</span>
+                  <EditableField
+                    value={a.nomMateriel} 
+                    onSave={(newVal) => { a.nomMateriel = newVal; handleUpdateField(a); }} 
+                    isGuest={isGuest}
+                    placeholder="Matériel"
+                  />
+                </div>
+
+                {/* MARQUE ET RÉFÉRENCE */}
+                <div className="text-xs text-slate-500 flex items-center gap-2">
+                  <EditableField
+                    value={a.marqueMateriel} 
+                    onSave={(newVal) => { a.marqueMateriel = newVal; handleUpdateField(a); }} 
+                    isGuest={isGuest}
+                    placeholder="Marque"
+                  />
+                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-400">Réf:</span>
+                  <EditableField
+                    value={a.reference} 
+                    onSave={(newVal) => { a.reference = newVal; handleUpdateField(a); }} 
+                    isGuest={isGuest}
+                    placeholder="Aucune réf."
+                  />
+                </div>
+
+                {/* DEMANDEUR */}
+                <div className="text-[11px] text-gray-500 flex gap-1 mt-1">
+                  <span>Demandé par :</span>
+                  <EditableField
+                    value={a.prenomPersonne} 
+                    onSave={(newVal) => { a.prenomPersonne = newVal; handleUpdateField(a); }} 
+                    isGuest={isGuest}
+                    placeholder="Prénom"
+                  />
+                  <EditableField
+                    value={a.nomPersonne} 
+                    onSave={(newVal) => { a.nomPersonne = newVal; handleUpdateField(a); }} 
+                    isGuest={isGuest}
+                    placeholder="Nom"
+                  />
+                </div>
+              </div>
+
+              {/* ÉTAT */}
+              {a.etat && (
+                !isGuest ? (
+                  <select 
+                    value={a.etat} 
+                    onChange={async (e) => {
+                      if (a.id !== undefined) {
+                        await updateEtatAchat(a.id, e.target.value);
+                        await refreshData();
+                      }
+                    }}
+                    className="text-xs p-1 rounded border border-gray-300 outline-none"
+                  >
+                    {etats.map((etat) => (
+                      <option key={etat} value={etat}>
+                        {etat.replace("_", " ").toLowerCase()}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-xs bg-gray-200 px-2 py-1 rounded">{a.etat.replace("_", " ").toLowerCase()}</p>
+                )
+              )}
+
+              {/* SUPPRIMER */}
+              {!isGuest && (
+                <button 
+                  onClick={() => handleDeleteAchat(a.id)} 
+                  className="hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors ml-auto"
+                  title="Supprimer cet achat"
+                >
+                  <CircleX size={18} />
+                </button>
+              )}
+            </li>
+          ))}
+          {filteredAchats.length === 0 && (
+             <p className="text-center text-gray-400 mt-4 text-xs italic">Aucun achat enregistré.</p>
+          )}
+        </ul>
+        
+        {!isGuest && (
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="mt-2 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 rounded transition-colors"
+          >
+            + Demander un Achat
+          </button>
+        )}
+      </div>
+      
+      <ModalFormulaire
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title="Nouvelle demande d'achat"
+      >
+        <form onSubmit={handleSubmitAchat} className="flex flex-col gap-3">
+          
+          <div className="grid grid-cols-4 gap-3">
+            <div className="col-span-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Matériel</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-emerald-500" 
+                placeholder="Ex: Ordinateur portable" 
+                autoFocus
+                required
+                value={nomMateriel}
+                onChange={(e) => setNomMateriel(e.target.value)}
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Quantité</label>
+              <input 
+                type="number" 
+                min="1"
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-emerald-500" 
+                required
+                value={quantite}
+                onChange={(e) => setQuantite(Number(e.target.value))}
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Marque (optionnel)</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-emerald-500" 
+                placeholder="Ex: Dell" 
+                value={marqueMateriel}
+                onChange={(e) => setMarqueMateriel(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Référence (optionnel)</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-emerald-500" 
+                placeholder="Ex: XPS 13" 
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 border-t border-gray-200 mt-2 pt-3">
+            <div className="col-span-2">
+              <span className="block text-xs font-bold text-gray-500 uppercase">Demandeur</span>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Prénom (optionnel)</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-emerald-500" 
+                value={prenomPersonne}
+                onChange={(e) => setPrenomPersonne(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nom (optionnel)</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-emerald-500" 
+                value={nomPersonne}
+                onChange={(e) => setNomPersonne(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          {etats.length > 0 && (
+            <div className="mt-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">État de la demande</label>
+              <select 
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-emerald-500" 
+                required
+                value={etat}
+                onChange={(e) => setEtat(e.target.value)}
+              >
+                {etats.map((etat) => (
+                  <option key={etat} value={etat}>
+                    {etat.replace("_", " ").toLowerCase()}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            className="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded transition-colors"
+          >
+            Enregistrer la demande
+          </button>
+        </form>
+      </ModalFormulaire>
     </WidgetFrame>
   );
 }
