@@ -66,6 +66,10 @@ export default function DashboardPage() {
   const loadedConfigId = useRef<number | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const toggleGridInteractionClass = useCallback((active: boolean) => {
+    document.body.classList.toggle("widget-interacting", active);
+  }, []);
+
   const availableWidgets = WIDGETS.filter(
     (widgetName) => !layout.some((item) => item.i === widgetName)
   );
@@ -207,7 +211,16 @@ export default function DashboardPage() {
     SaveLayoutBD(newLayout);
   };
 
-  const onLayoutChange = useCallback((newLayout: any) => {
+  const handleLayoutCommit = useCallback(
+    (layoutActuel: any) => {
+      toggleGridInteractionClass(false);
+      setLayout(layoutActuel);
+      SaveLayoutBD(layoutActuel);
+    },
+    [SaveLayoutBD, toggleGridInteractionClass]
+  );
+
+  const handleLayoutLiveChange = useCallback((newLayout: any) => {
     setLayout(newLayout);
   }, []);
 
@@ -240,6 +253,12 @@ export default function DashboardPage() {
   useEffect(() => {
     RefreshConfig();
   }, [context?.groupeActifId, refreshVersion]);
+
+  useEffect(() => {
+    return () => {
+      toggleGridInteractionClass(false);
+    };
+  }, [toggleGridInteractionClass]);
 
   useEffect(() => {
     setErreur("");
@@ -392,9 +411,11 @@ export default function DashboardPage() {
           layout={layout}
           cols={24}
           rowHeight={60}
-          onLayoutChange={onLayoutChange}
-          onDragStop={(layoutActuel: any) => SaveLayoutBD(layoutActuel)}
-          onResizeStop={(layoutActuel: any) => SaveLayoutBD(layoutActuel)}
+          onLayoutChange={handleLayoutLiveChange}
+          onDragStart={() => toggleGridInteractionClass(true)}
+          onResizeStart={() => toggleGridInteractionClass(true)}
+          onDragStop={(layoutActuel: any) => handleLayoutCommit(layoutActuel)}
+          onResizeStop={(layoutActuel: any) => handleLayoutCommit(layoutActuel)}
           draggableHandle=".drag-handle"
           margin={[16, 16]}
           maxRows={24}

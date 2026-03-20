@@ -17,7 +17,7 @@ export default function WidgetFrame({
   options,
 }: WidgetFrameProps) {
   return (
-    <div className="flex flex-col h-full min-w-0 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+    <div className="widget-frame flex flex-col h-full min-w-0 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
       <div
         className={`${headerColor} px-4 py-2.5 text-sm font-semibold flex items-center gap-3 cursor-move drag-handle`}
       >
@@ -35,7 +35,7 @@ export default function WidgetFrame({
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-hidden bg-white">{children}</div>
+      <div className="widget-body flex-1 min-h-0 overflow-hidden bg-white">{children}</div>
     </div>
   );
 }
