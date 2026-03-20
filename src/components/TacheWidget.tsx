@@ -30,7 +30,7 @@ export default function WidgetTaches({ groupeId }: WidgetTachesProps) {
         
         stompClient.subscribe(frequence, (message) => {
           if (message.body === 'REFRESH_TACHES') {
-            console.log(`⚡ Alerte reçue sur ${frequence} ! Mise à jour invisible en cours...`);
+            console.log(`Alerte reçue sur ${frequence} ! Mise à jour invisible en cours...`);
             fetchTaches();
           }
         });

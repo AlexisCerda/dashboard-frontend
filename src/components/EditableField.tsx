@@ -7,6 +7,7 @@ interface EditableFieldProps {
   isGuest?: boolean;
   placeholder?: string;
   multiline?: boolean;
+  noWrap?: boolean;
 }
 
 export default function EditableField({ 
@@ -15,7 +16,8 @@ export default function EditableField({
   type = "text", 
   isGuest,
   placeholder = "...",
-  multiline = false
+  multiline = false,
+  noWrap = false,
 }: EditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value || "");
@@ -71,7 +73,7 @@ export default function EditableField({
         setTempValue(value || "");
         setIsEditing(true);
       }} 
-      className={`cursor-pointer hover:bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-md transition-colors wrap-break-word ${multiline ? "whitespace-pre-wrap" : "whitespace-normal"}`}
+      className={`cursor-pointer hover:bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-md transition-colors wrap-break-word ${multiline ? "whitespace-pre-wrap" : noWrap ? "whitespace-nowrap" : "whitespace-normal"}`}
       title="Cliquer pour modifier"
     >
       {value || placeholder}

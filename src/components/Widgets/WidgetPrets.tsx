@@ -2,18 +2,18 @@ import { useEffect, useState } from "react";
 import WidgetFrame from "../WidgetFrame";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import { 
-  useCreatePret, 
-  useDeletePret, 
-  useGetAllEtatsPret, 
-  useGetPretGroupe, 
-  useUpdateEtatPret, 
-  useUpdatePret, 
+import {
+  useCreatePret,
+  useDeletePret,
+  useGetAllEtatsPret,
+  useGetPretGroupe,
+  useUpdateEtatPret,
+  useUpdatePret,
 } from "../../services/WidgetService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
-import { CircleX, ChevronUp, ChevronDown, CirclePlus } from "lucide-react"; 
+import { CircleX, ChevronUp, ChevronDown, CirclePlus } from "lucide-react";
 import EditableField from "../EditableField";
 
 // L'interface exacte que tu as fournie
@@ -29,11 +29,17 @@ export interface PretDTO {
   dateFin: string;
 }
 
-export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void; isGuest?: boolean }) {
+export default function WidgetPrets({
+  onClose,
+  isGuest,
+}: {
+  onClose?: () => void;
+  isGuest?: boolean;
+}) {
   const [prets, setPrets] = useState<PretDTO[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [etats, setEtats] = useState<string[]>([]); 
-  
+  const [etats, setEtats] = useState<string[]>([]);
+
   // États du formulaire
   const [nomMateriel, setNomMateriel] = useState("");
   const [marqueMateriel, setMarqueMateriel] = useState("");
@@ -56,7 +62,7 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
 
   const handleSubmitPret = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     const data: PretDTO = {
       id: 0,
       nomMateriel,
@@ -64,14 +70,14 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
       nomPersonne,
       prenomPersonne,
       quantite: Number(quantite),
-      dateDebut: dateDebut || null as any,
-      dateFin: dateFin || null as any,
+      dateDebut: dateDebut || (null as any),
+      dateFin: dateFin || (null as any),
       etat: etat,
     };
 
     await createPret(data);
     await refreshData();
-    
+
     setIsModalOpen(false);
     // Reset du form
     setNomMateriel("");
@@ -105,7 +111,7 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
           // ⚠️ Assure-toi que Spring Boot envoie bien "REFRESH_PRETS" !
-          if (message.body === "REFRESH_PRETS") { 
+          if (message.body === "REFRESH_PRETS") {
             refreshData();
           }
         });
@@ -151,7 +157,8 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
   }
 
   const filteredPrets = prets.filter((p) => {
-    const searchString = `${p.nomMateriel} ${p.marqueMateriel} ${p.prenomPersonne} ${p.nomPersonne} ${p.etat.replace("_", " ")} ${p.dateDebut} ${p.dateFin}`.toLowerCase();
+    const searchString =
+      `${p.nomMateriel} ${p.marqueMateriel} ${p.prenomPersonne} ${p.nomPersonne} ${p.etat.replace("_", " ")} ${p.dateDebut} ${p.dateFin}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
 
@@ -182,9 +189,17 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
               type="button"
               onClick={() => setIsSearchCollapsed((prev) => !prev)}
               className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
-              title={isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"}
+              title={
+                isSearchCollapsed
+                  ? "Déplier la recherche"
+                  : "Rétracter la recherche"
+              }
             >
-              {isSearchCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+              {isSearchCollapsed ? (
+                <ChevronDown size={16} />
+              ) : (
+                <ChevronUp size={16} />
+              )}
             </button>
             {!isGuest && (
               <button
@@ -193,7 +208,7 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
                 className="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all hover:-translate-y-0.5 hover:shadow-md"
                 title="Ajouter"
               >
-                <CirclePlus/>
+                <CirclePlus />
               </button>
             )}
           </div>
@@ -215,20 +230,25 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
               className="flex flex-col xl:flex-row xl:items-start gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200"
             >
               <div className="flex flex-col flex-1 gap-1">
-                
                 {/* MATÉRIEL ET QUANTITÉ */}
                 <div className="font-semibold text-slate-800 flex flex-wrap items-center gap-1">
                   <span className="text-gray-400 font-normal">Qte:</span>
                   <EditableField
-                    value={String(p.quantite)} 
+                    value={String(p.quantite)}
                     type="number"
-                    onSave={(newVal) => { p.quantite = Number(newVal); handleUpdateField(p); }} 
+                    onSave={(newVal) => {
+                      p.quantite = Number(newVal);
+                      handleUpdateField(p);
+                    }}
                     isGuest={isGuest}
                   />
                   <span>-</span>
                   <EditableField
-                    value={p.nomMateriel} 
-                    onSave={(newVal) => { p.nomMateriel = newVal; handleUpdateField(p); }} 
+                    value={p.nomMateriel}
+                    onSave={(newVal) => {
+                      p.nomMateriel = newVal;
+                      handleUpdateField(p);
+                    }}
                     isGuest={isGuest}
                     placeholder="Matériel"
                   />
@@ -238,8 +258,11 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
                 <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
                   <span className="text-gray-400">Marque:</span>
                   <EditableField
-                    value={p.marqueMateriel} 
-                    onSave={(newVal) => { p.marqueMateriel = newVal; handleUpdateField(p); }} 
+                    value={p.marqueMateriel}
+                    onSave={(newVal) => {
+                      p.marqueMateriel = newVal;
+                      handleUpdateField(p);
+                    }}
                     isGuest={isGuest}
                     placeholder="Non spécifiée"
                   />
@@ -247,16 +270,24 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
 
                 {/* EMPRUNTEUR */}
                 <div className="text-[11px] text-gray-500 flex flex-wrap gap-1 mt-1">
-                  <span className="font-semibold text-amber-700">Emprunteur :</span>
+                  <span className="font-semibold text-amber-700">
+                    Emprunteur :
+                  </span>
                   <EditableField
-                    value={p.prenomPersonne} 
-                    onSave={(newVal) => { p.prenomPersonne = newVal; handleUpdateField(p); }} 
+                    value={p.prenomPersonne}
+                    onSave={(newVal) => {
+                      p.prenomPersonne = newVal;
+                      handleUpdateField(p);
+                    }}
                     isGuest={isGuest}
                     placeholder="Prénom"
                   />
                   <EditableField
-                    value={p.nomPersonne} 
-                    onSave={(newVal) => { p.nomPersonne = newVal; handleUpdateField(p); }} 
+                    value={p.nomPersonne}
+                    onSave={(newVal) => {
+                      p.nomPersonne = newVal;
+                      handleUpdateField(p);
+                    }}
                     isGuest={isGuest}
                     placeholder="Nom"
                   />
@@ -267,29 +298,35 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
                   <div className="flex items-center gap-1 text-green-700">
                     <span title="Date d'emprunt">Du</span>
                     <EditableField
-                      value={p.dateDebut} 
+                      value={p.dateDebut}
                       type="date"
                       isGuest={isGuest}
-                      onSave={(newVal) => { p.dateDebut = formatDate(newVal); handleUpdateField(p); }} 
+                      onSave={(newVal) => {
+                        p.dateDebut = formatDate(newVal);
+                        handleUpdateField(p);
+                      }}
                     />
                   </div>
                   <div className="flex items-center gap-1 text-red-600">
                     <span title="Date de retour prévue">Au</span>
                     <EditableField
-                      value={p.dateFin} 
+                      value={p.dateFin}
                       type="date"
                       isGuest={isGuest}
-                      onSave={(newVal) => { p.dateFin = formatDate(newVal); handleUpdateField(p); }} 
+                      onSave={(newVal) => {
+                        p.dateFin = formatDate(newVal);
+                        handleUpdateField(p);
+                      }}
                     />
                   </div>
                 </div>
               </div>
 
               {/* ÉTAT */}
-              {p.etat && (
-                !isGuest ? (
-                  <select 
-                    value={p.etat} 
+              {p.etat &&
+                (!isGuest ? (
+                  <select
+                    value={p.etat}
                     onChange={async (e) => {
                       if (p.id !== undefined) {
                         await updateEtatPret(p.id, e.target.value);
@@ -305,14 +342,15 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
                     ))}
                   </select>
                 ) : (
-                  <p className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-full font-medium">{p.etat.replace("_", " ").toLowerCase()}</p>
-                )
-              )}
+                  <p className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-full font-medium">
+                    {p.etat.replace("_", " ").toLowerCase()}
+                  </p>
+                ))}
 
               {/* SUPPRIMER */}
               {!isGuest && (
-                <button 
-                  onClick={() => handleDeletePret(p.id)} 
+                <button
+                  onClick={() => handleDeletePret(p.id)}
                   className="hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors xl:ml-auto"
                   title="Supprimer ce prêt"
                 >
@@ -322,26 +360,28 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
             </li>
           ))}
           {filteredPrets.length === 0 && (
-             <p className="text-center text-gray-400 mt-4 text-xs italic">Aucun prêt en cours.</p>
+            <p className="text-center text-gray-400 mt-4 text-xs italic">
+              Aucun prêt en cours.
+            </p>
           )}
         </ul>
-        
       </div>
-      
+
       <ModalFormulaire
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         title="Nouveau Prêt de Matériel"
       >
         <form onSubmit={handleSubmitPret} className="flex flex-col gap-3">
-          
           <div className="grid grid-cols-4 gap-3">
             <div className="col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Matériel emprunté</label>
-              <input 
-                type="text" 
-                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500" 
-                placeholder="Ex: Vidéoprojecteur" 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Matériel emprunté
+              </label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500"
+                placeholder="Ex: Vidéoprojecteur"
                 autoFocus
                 required
                 value={nomMateriel}
@@ -349,24 +389,28 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
               />
             </div>
             <div className="col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Quantité</label>
-              <input 
-                type="number" 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Quantité
+              </label>
+              <input
+                type="number"
                 min="1"
-                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500" 
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500"
                 required
                 value={quantite}
                 onChange={(e) => setQuantite(Number(e.target.value))}
               />
             </div>
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Marque (optionnel)</label>
-            <input 
-              type="text" 
-              className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500" 
-              placeholder="Ex: Epson" 
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Marque (optionnel)
+            </label>
+            <input
+              type="text"
+              className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500"
+              placeholder="Ex: Epson"
               value={marqueMateriel}
               onChange={(e) => setMarqueMateriel(e.target.value)}
             />
@@ -374,23 +418,29 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
 
           <div className="grid grid-cols-2 gap-3 border-t border-gray-200 mt-2 pt-3">
             <div className="col-span-2">
-              <span className="block text-xs font-bold text-gray-500 uppercase">Emprunteur</span>
+              <span className="block text-xs font-bold text-gray-500 uppercase">
+                Emprunteur
+              </span>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
-              <input 
-                type="text" 
-                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500" 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Prénom
+              </label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500"
                 required
                 value={prenomPersonne}
                 onChange={(e) => setPrenomPersonne(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-              <input 
-                type="text" 
-                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500" 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nom
+              </label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500"
                 required
                 value={nomPersonne}
                 onChange={(e) => setNomPersonne(e.target.value)}
@@ -400,30 +450,36 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
 
           <div className="grid grid-cols-2 gap-3 border-t border-gray-200 mt-2 pt-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date d'emprunt (optionnel)</label>
-              <input 
-                type="date" 
-                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500" 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date d'emprunt (optionnel)
+              </label>
+              <input
+                type="date"
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500"
                 value={dateDebut}
                 onChange={(e) => setDateDebut(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Retour prévu (optionnel)</label>
-              <input 
-                type="date" 
-                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500" 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Retour prévu (optionnel)
+              </label>
+              <input
+                type="date"
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500"
                 value={dateFin}
                 onChange={(e) => setDateFin(e.target.value)}
               />
             </div>
           </div>
-          
+
           {etats.length > 0 && (
             <div className="mt-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">État du prêt</label>
-              <select 
-                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500" 
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                État du prêt
+              </label>
+              <select
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-amber-500"
                 required
                 value={etat}
                 onChange={(e) => setEtat(e.target.value)}
@@ -437,8 +493,8 @@ export default function WidgetPrets({ onClose, isGuest }: { onClose?: () => void
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="mt-4 w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 rounded transition-colors"
           >
             Enregistrer le Prêt

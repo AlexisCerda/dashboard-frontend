@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WidgetFrame from "../WidgetFrame";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
@@ -15,6 +15,8 @@ import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
 import { CircleX, ChevronUp, ChevronDown, CirclePlus } from "lucide-react"; 
 import EditableField from "../EditableField";
+
+const COMPACT_LAYOUT_BREAKPOINT = 360;
 
 export interface MouvementDTO {
   id: number;
@@ -37,6 +39,8 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
   const [etat, setEtat] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
+  const [isCompactLayout, setIsCompactLayout] = useState(false);
+  const widgetContainerRef = useRef<HTMLDivElement | null>(null);
 
   const context = useContext(AuthContext);
   const getMouvementGroupe = useGetMouvementGroupe();
@@ -124,6 +128,28 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
     fetchEtats();
   }, []);
 
+  useEffect(() => {
+    const container = widgetContainerRef.current;
+    if (!container) return;
+
+    const observedElement =
+      (container.closest(".react-grid-item") as HTMLElement | null) ?? container;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      const width = entry?.contentRect.width ?? observedElement.clientWidth;
+      if (width > 0) {
+        setIsCompactLayout(width <= COMPACT_LAYOUT_BREAKPOINT);
+      }
+    });
+
+    observer.observe(observedElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   async function refreshData() {
     if (!context?.groupeActifId) return;
     try {
@@ -138,6 +164,31 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
     const searchString = `${m.nom} ${m.prenom} ${m.etat?.replace("_", " ")} ${m.dateArrivee} ${m.dateDepart}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
+
+  const headerActions = (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsSearchCollapsed((prev) => !prev)}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-white/40 bg-white/15 text-white hover:bg-white/25 transition-colors"
+        title={isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"}
+      >
+        {isSearchCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+      </button>
+      {!isGuest && (
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-white/30 bg-white/15 text-white hover:bg-white/25 transition-all"
+          title="Ajouter"
+        >
+          <CirclePlus size={18} />
+        </button>
+      )}
+    </>
+  );
 
   const formatDate = (dateString: string) => {
     try {
@@ -158,29 +209,10 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
       title="Mouvements (Arrivées / Départs)"
       headerColor="bg-purple-600 text-white border-b border-purple-700"
       onClose={onClose}
+      options={headerActions}
     >
-      <div className="flex flex-col h-full p-3">
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <button
-              type="button"
-              onClick={() => setIsSearchCollapsed((prev) => !prev)}
-              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
-              title={isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"}
-            >
-              {isSearchCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-            </button>
-            {!isGuest && (
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(true)}
-                className="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold transition-all hover:-translate-y-0.5 hover:shadow-md"
-                title="Ajouter"
-              >
-                <CirclePlus/>
-              </button>
-            )}
-          </div>
+      <div ref={widgetContainerRef} className="flex flex-col h-full p-3">
+        <div className="mb-3">
           {!isSearchCollapsed && (
             <input
               type="text"
@@ -196,9 +228,9 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
           {filteredMouvements.map((m) => (
             <li
               key={m.id}
-              className="flex flex-col xl:flex-row xl:items-start gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200"
+              className={`${isCompactLayout ? "flex flex-col" : "flex flex-row items-start"} gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200`}
             >
-              <div className="flex flex-col flex-1">
+              <div className="flex flex-col flex-1 gap-1">
                 <div className="font-semibold text-slate-800 flex flex-wrap gap-1">
                   <EditableField
                     value={m.prenom} 
@@ -235,37 +267,39 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
                   </div>
                 </div>
               </div>
-              {m.etat && (
-                !isGuest ? (
-                  <select 
-                    value={m.etat} 
-                    onChange={async (e) => {
-                      if (m.id !== undefined) {
-                        await updateEtatMouvement(m.id, e.target.value);
-                        await refreshData();
-                      }
-                    }}
-                    className="text-xs p-1.5 rounded-lg border border-purple-200 outline-none bg-purple-50 text-purple-800"
-                  >
-                    {etats.map((etat) => (
-                      <option key={etat} value={etat}>
-                        {etat.replace("_", " ").toLowerCase()}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-1 rounded-full font-medium">{m.etat.replace("_", " ").toLowerCase()}</p>
-                )
-              )}
+              <div className={`flex ${isCompactLayout ? "w-full" : "w-auto self-start"} items-center justify-end gap-2`}>
+                {m.etat && (
+                  !isGuest ? (
+                    <select 
+                      value={m.etat} 
+                      onChange={async (e) => {
+                        if (m.id !== undefined) {
+                          await updateEtatMouvement(m.id, e.target.value);
+                          await refreshData();
+                        }
+                      }}
+                      className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-36"} text-xs p-1.5 rounded-lg border border-purple-200 outline-none bg-purple-50 text-purple-800`}
+                    >
+                      {etats.map((etat) => (
+                        <option key={etat} value={etat}>
+                          {etat.replace("_", " ").toLowerCase()}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-36"} text-center text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-1 rounded-full font-medium`}>{m.etat.replace("_", " ").toLowerCase()}</p>
+                  )
+                )}
 
-              {!isGuest && (
-                <button 
-                  onClick={() => handleDeleteMouvement(m.id)} 
-                  className="hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors xl:ml-auto"
-                >
-                  <CircleX size={18} />
-                </button>
-              )}
+                {!isGuest && (
+                  <button 
+                    onClick={() => handleDeleteMouvement(m.id)} 
+                    className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
+                  >
+                    <CircleX size={18} />
+                  </button>
+                )}
+              </div>
             </li>
           ))}
           {filteredMouvements.length === 0 && (

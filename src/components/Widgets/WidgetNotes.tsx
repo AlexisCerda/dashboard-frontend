@@ -103,32 +103,38 @@ export default function WidgetNotes({ onClose }: { onClose?: () => void; isGuest
     return n.description.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
+  const headerActions = (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsSearchCollapsed((prev) => !prev)}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-white/40 bg-white/15 text-white hover:bg-white/25 transition-colors"
+        title={isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"}
+      >
+        {isSearchCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+      </button>
+      <button
+        type="button"
+        onClick={() => setIsModalOpen(true)}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-white/30 bg-white/15 text-white hover:bg-white/25 transition-all"
+        title="Ajouter"
+      >
+        <CirclePlus size={18} />
+      </button>
+    </>
+  );
+
   return (
     <WidgetFrame
       title="Mes Notes Personnelles"
       headerColor="bg-orange-500 text-white border-b border-orange-600"
       onClose={onClose}
+      options={headerActions}
     >
       <div className="flex flex-col h-full p-3">
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <button
-              type="button"
-              onClick={() => setIsSearchCollapsed((prev) => !prev)}
-              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors"
-              title={isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"}
-            >
-              {isSearchCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-bold transition-all hover:-translate-y-0.5 hover:shadow-md"
-              title="Ajouter"
-            >
-              <CirclePlus/>
-            </button>
-          </div>
+        <div className="mb-3">
           {!isSearchCollapsed && (
             <input
               type="text"
