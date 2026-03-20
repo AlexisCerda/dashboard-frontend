@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WidgetFrame from "../WidgetFrame";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
@@ -16,7 +16,8 @@ import ModalFormulaire from "../ModalFormulaire";
 import { CircleX, ChevronUp, ChevronDown, CirclePlus } from "lucide-react";
 import EditableField from "../EditableField";
 
-// L'interface exacte que tu as fournie
+const COMPACT_LAYOUT_BREAKPOINT = 380;
+
 export interface PretDTO {
   id: number;
   nomMateriel: string;
@@ -51,6 +52,8 @@ export default function WidgetPrets({
   const [etat, setEtat] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
+  const [isCompactLayout, setIsCompactLayout] = useState(false);
+  const widgetContainerRef = useRef<HTMLDivElement | null>(null);
 
   const context = useContext(AuthContext);
   const getPretGroupe = useGetPretGroupe();
@@ -101,6 +104,33 @@ export default function WidgetPrets({
     refreshData();
   };
 
+  const headerActions = (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsSearchCollapsed((prev) => !prev)}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-white/40 bg-white/15 text-white hover:bg-white/25 transition-colors"
+        title={
+          isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"
+        }
+      >
+        {isSearchCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+      </button>
+      {!isGuest && (
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-white/30 bg-white/15 text-white hover:bg-white/25 transition-all"
+          title="Ajouter"
+        >
+          <CirclePlus size={18} />
+        </button>
+      )}
+    </>
+  );
+
   useEffect(() => {
     if (!context?.groupeActifId || context?.auth.idUser == null) return;
 
@@ -146,11 +176,39 @@ export default function WidgetPrets({
     fetchEtats();
   }, []);
 
+  useEffect(() => {
+    const container = widgetContainerRef.current;
+    if (!container) return;
+
+    const observedElement =
+      (container.closest(".react-grid-item") as HTMLElement | null) ?? container;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      const width = entry?.contentRect.width ?? observedElement.clientWidth;
+      if (width > 0) {
+        setIsCompactLayout(width <= COMPACT_LAYOUT_BREAKPOINT);
+      }
+    });
+
+    observer.observe(observedElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   async function refreshData() {
     if (!context?.groupeActifId) return;
     try {
       const resultatGroupe = await getPretGroupe();
-      setPrets(resultatGroupe || []);
+      setPrets(
+        (resultatGroupe || []).map((pret: PretDTO) => ({
+          ...pret,
+          dateDebut: formatDate(pret.dateDebut),
+          dateFin: formatDate(pret.dateFin),
+        })),
+      );
     } catch (error) {
       console.error("Erreur", error);
     }
@@ -165,6 +223,9 @@ export default function WidgetPrets({
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return "";
+      if (dateString.includes("T")) {
+        return dateString.split("T")[0];
+      }
       if (!dateString.includes("/")) return dateString;
       const date = dateString.split("/");
       const day = String(date[0]).padStart(2, "0");
@@ -181,37 +242,10 @@ export default function WidgetPrets({
       title="Prêts de Matériel"
       headerColor="bg-amber-500 text-white border-b border-amber-600"
       onClose={onClose}
+      options={headerActions}
     >
-      <div className="flex flex-col h-full p-3">
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <button
-              type="button"
-              onClick={() => setIsSearchCollapsed((prev) => !prev)}
-              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
-              title={
-                isSearchCollapsed
-                  ? "Déplier la recherche"
-                  : "Rétracter la recherche"
-              }
-            >
-              {isSearchCollapsed ? (
-                <ChevronDown size={16} />
-              ) : (
-                <ChevronUp size={16} />
-              )}
-            </button>
-            {!isGuest && (
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(true)}
-                className="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold transition-all hover:-translate-y-0.5 hover:shadow-md"
-                title="Ajouter"
-              >
-                <CirclePlus />
-              </button>
-            )}
-          </div>
+      <div ref={widgetContainerRef} className="flex flex-col h-full p-3">
+        <div className="mb-3">
           {!isSearchCollapsed && (
             <input
               type="text"
@@ -227,11 +261,10 @@ export default function WidgetPrets({
           {filteredPrets.map((p) => (
             <li
               key={p.id}
-              className="flex flex-col xl:flex-row xl:items-start gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200"
+              className={`${isCompactLayout ? "flex flex-col" : "grid grid-cols-[minmax(0,1fr)_9rem] items-start"} gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200`}
             >
-              <div className="flex flex-col flex-1 gap-1">
-                {/* MATÉRIEL ET QUANTITÉ */}
-                <div className="font-semibold text-slate-800 flex flex-wrap items-center gap-1">
+              <div className="flex flex-col flex-1 min-w-0 gap-1">
+                <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} font-semibold text-slate-800 flex items-center gap-1 overflow-hidden`}>
                   <span className="text-gray-400 font-normal">Qte:</span>
                   <EditableField
                     value={String(p.quantite)}
@@ -241,6 +274,7 @@ export default function WidgetPrets({
                       handleUpdateField(p);
                     }}
                     isGuest={isGuest}
+                    noWrap={!isCompactLayout}
                   />
                   <span>-</span>
                   <EditableField
@@ -251,12 +285,11 @@ export default function WidgetPrets({
                     }}
                     isGuest={isGuest}
                     placeholder="Matériel"
+                    noWrap={!isCompactLayout}
                   />
                 </div>
 
-                {/* MARQUE */}
                 <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
-                  <span className="text-gray-400">Marque:</span>
                   <EditableField
                     value={p.marqueMateriel}
                     onSave={(newVal) => {
@@ -264,15 +297,38 @@ export default function WidgetPrets({
                       handleUpdateField(p);
                     }}
                     isGuest={isGuest}
-                    placeholder="Non spécifiée"
+                    placeholder="Marque"
+                    noWrap={!isCompactLayout}
+                  />
+                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-400">Période:</span>
+                  <EditableField
+                    value={p.dateDebut}
+                    type="date"
+                    isGuest={isGuest}
+                    onSave={(newVal) => {
+                      p.dateDebut = formatDate(newVal);
+                      handleUpdateField(p);
+                    }}
+                    placeholder="Début"
+                    noWrap={false}
+                  />
+                  <span className="text-gray-300">→</span>
+                  <EditableField
+                    value={p.dateFin}
+                    type="date"
+                    isGuest={isGuest}
+                    onSave={(newVal) => {
+                      p.dateFin = formatDate(newVal);
+                      handleUpdateField(p);
+                    }}
+                    placeholder="Fin"
+                    noWrap={false}
                   />
                 </div>
 
-                {/* EMPRUNTEUR */}
-                <div className="text-[11px] text-gray-500 flex flex-wrap gap-1 mt-1">
-                  <span className="font-semibold text-amber-700">
-                    Emprunteur :
-                  </span>
+                <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} text-[11px] text-gray-500 flex gap-1 mt-1 overflow-hidden`}>
+                  <span>Emprunteur :</span>
                   <EditableField
                     value={p.prenomPersonne}
                     onSave={(newVal) => {
@@ -281,6 +337,7 @@ export default function WidgetPrets({
                     }}
                     isGuest={isGuest}
                     placeholder="Prénom"
+                    noWrap={!isCompactLayout}
                   />
                   <EditableField
                     value={p.nomPersonne}
@@ -290,73 +347,46 @@ export default function WidgetPrets({
                     }}
                     isGuest={isGuest}
                     placeholder="Nom"
+                    noWrap={!isCompactLayout}
                   />
-                </div>
-
-                {/* DATES */}
-                <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 mt-1 bg-amber-50 p-1 rounded">
-                  <div className="flex items-center gap-1 text-green-700">
-                    <span title="Date d'emprunt">Du</span>
-                    <EditableField
-                      value={p.dateDebut}
-                      type="date"
-                      isGuest={isGuest}
-                      onSave={(newVal) => {
-                        p.dateDebut = formatDate(newVal);
-                        handleUpdateField(p);
-                      }}
-                    />
-                  </div>
-                  <div className="flex items-center gap-1 text-red-600">
-                    <span title="Date de retour prévue">Au</span>
-                    <EditableField
-                      value={p.dateFin}
-                      type="date"
-                      isGuest={isGuest}
-                      onSave={(newVal) => {
-                        p.dateFin = formatDate(newVal);
-                        handleUpdateField(p);
-                      }}
-                    />
-                  </div>
                 </div>
               </div>
 
-              {/* ÉTAT */}
-              {p.etat &&
-                (!isGuest ? (
-                  <select
-                    value={p.etat}
-                    onChange={async (e) => {
-                      if (p.id !== undefined) {
-                        await updateEtatPret(p.id, e.target.value);
-                        await refreshData();
-                      }
-                    }}
-                    className="text-xs p-1.5 rounded-lg border border-amber-200 outline-none bg-amber-50 text-amber-800"
-                  >
-                    {etats.map((etat) => (
-                      <option key={etat} value={etat}>
-                        {etat.replace("_", " ").toLowerCase()}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-full font-medium">
-                    {p.etat.replace("_", " ").toLowerCase()}
-                  </p>
-                ))}
+              <div className={`flex ${isCompactLayout ? "w-full flex-row items-center justify-end mt-2" : "w-full flex-col items-end"} gap-2`}>
+                {p.etat &&
+                  (!isGuest ? (
+                    <select
+                      value={p.etat}
+                      onChange={async (e) => {
+                        if (p.id !== undefined) {
+                          await updateEtatPret(p.id, e.target.value);
+                          await refreshData();
+                        }
+                      }}
+                      className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-xs p-1.5 rounded-lg border border-amber-200 outline-none bg-amber-50 text-amber-800`}
+                    >
+                      {etats.map((etat) => (
+                        <option key={etat} value={etat}>
+                          {etat.replace("_", " ").toLowerCase()}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-full font-medium`}>
+                      {p.etat.replace("_", " ").toLowerCase()}
+                    </p>
+                  ))}
 
-              {/* SUPPRIMER */}
-              {!isGuest && (
-                <button
-                  onClick={() => handleDeletePret(p.id)}
-                  className="hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors xl:ml-auto"
-                  title="Supprimer ce prêt"
-                >
-                  <CircleX size={18} />
-                </button>
-              )}
+                {!isGuest && (
+                  <button
+                    onClick={() => handleDeletePret(p.id)}
+                    className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
+                    title="Supprimer ce prêt"
+                  >
+                    <CircleX size={18} />
+                  </button>
+                )}
+              </div>
             </li>
           ))}
           {filteredPrets.length === 0 && (

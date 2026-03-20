@@ -207,7 +207,13 @@ export default function WidgetTaches({
       isMyTasks ? GetTachesByUser() : GetTachesByGroupe(),
     ]);
 
-    setTaches(resultatGroupe || []);
+    setTaches(
+      (resultatGroupe || []).map((tache: TacheDTO) => ({
+        ...tache,
+        dateDebut: tache.dateDebut ? formatDate(tache.dateDebut) : null,
+        dateLimite: tache.dateLimite ? formatDate(tache.dateLimite) : null,
+      })),
+    );
 
     const membresMap: Record<number, MembreDTO[]> = {};
     if (resultatGroupe) {
@@ -246,8 +252,10 @@ export default function WidgetTaches({
   const formatDate = (dateString: string) => {
     try {
       if (!dateString) return "";
+      if (dateString.includes("T")) {
+        return dateString.split("T")[0];
+      }
       if (!dateString.includes("/")) return dateString;
-      console.log(dateString);
       const date = dateString.split("/");
       const day = String(date[0]).padStart(2, "0");
       const month = String(date[1]).padStart(2, "0");
@@ -326,10 +334,10 @@ export default function WidgetTaches({
           {filteredTaches.map((tache) => (
             <li
               key={tache.id}
-              className={`${isCompactLayout ? "flex flex-col gap-2" : "grid grid-cols-[1fr_auto_auto] items-start gap-4"} p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 text-sm`}
+              className={`${isCompactLayout ? "flex flex-col" : "grid grid-cols-[minmax(0,1fr)_9rem] items-start"} gap-3 p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 text-sm`}
             >
-              <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                <div className="flex flex-wrap items-center gap-2 font-medium">
+              <div className="flex flex-col flex-1 min-w-0 gap-1">
+                <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} font-semibold text-slate-800 flex items-center gap-1 overflow-hidden`}>
                   <EditableField
                     value={tache.nom}
                     onSave={(newVal) => (
@@ -337,8 +345,10 @@ export default function WidgetTaches({
                       handleUpdateField(tache)
                     )}
                     isGuest={isGuest || showMyTasksOnly}
+                    placeholder="Tâche"
+                    noWrap={!isCompactLayout}
                   />
-                  <span className="text-gray-300 hidden sm:inline">|</span>
+                  <span className="text-gray-300">|</span>
                   <EditableField
                     value={tache.description}
                     isGuest={isGuest || showMyTasksOnly}
@@ -347,10 +357,12 @@ export default function WidgetTaches({
                       tache.description = newVal;
                       handleUpdateField(tache);
                     }}
+                    noWrap={!isCompactLayout}
                   />
                 </div>
-                
-                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+
+                <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
+                  <span className="text-gray-400">Période:</span>
                   <EditableField
                     value={tache.dateDebut}
                     type="date"
@@ -359,8 +371,10 @@ export default function WidgetTaches({
                       tache.dateDebut = formatDate(newVal);
                       handleUpdateField(tache);
                     }}
+                    placeholder="Début"
+                    noWrap={false}
                   />
-                  <span>→</span>
+                  <span className="text-gray-300">→</span>
                   <EditableField
                     value={tache.dateLimite}
                     type="date"
@@ -369,45 +383,50 @@ export default function WidgetTaches({
                       tache.dateLimite = formatDate(newVal);
                       handleUpdateField(tache);
                     }}
+                    placeholder="Fin"
+                    noWrap={false}
                   />
+                </div>
+
+                <div className="text-[11px] text-gray-500 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-1">
+                  <span className="pt-0.5">Membres :</span>
+                  <div className="flex flex-wrap items-center gap-1 min-w-0">
+                    {tache.id !== undefined && membres[tache.id]?.length === 0 && (
+                      <span className="text-gray-400 italic">Aucun</span>
+                    )}
+                    {tache.id !== undefined &&
+                      membres[tache.id]?.map((membre: MembreDTO) => (
+                        <span
+                          className="flex items-center gap-1 bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full border border-blue-200 whitespace-nowrap max-w-full sm:max-w-40"
+                          key={membre.id}
+                          title={`${membre.nom} ${membre.prenom}`}
+                        >
+                          <span className="truncate">
+                            {membre.prenom.charAt(0)}. {membre.nom}
+                          </span>
+                          {!isGuest && !showMyTasksOnly && (
+                            <button
+                              onClick={() =>
+                                handleRemoveMembre(
+                                  tache.id as number,
+                                  membre.id as number,
+                                )
+                              }
+                              className="hover:text-red-600 hover:bg-red-100 text-red-500 rounded-full p-0.5 transition-colors ml-1 shrink-0"
+                            >
+                              <UserRoundX size={10} />
+                            </button>
+                          )}
+                        </span>
+                      ))}
+                  </div>
                 </div>
               </div>
 
-              {/* SECTION MEMBRES (Masquée en mode compact) */}
-              {!isCompactLayout && (
-                <div className="flex-shrink-0 flex flex-nowrap items-center gap-1 overflow-hidden max-w-[220px]">
-                  {tache.id !== undefined &&
-                    membres[tache.id]?.map((membre: MembreDTO) => (
-                      <span
-                        className="flex items-center gap-1 bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full border border-blue-200 whitespace-nowrap overflow-hidden text-ellipsis"
-                        key={membre.id}
-                        title={`${membre.nom} ${membre.prenom}`}
-                      >
-                         {membre.prenom.charAt(0)}. {membre.nom}
-                        {!isGuest && !showMyTasksOnly && (
-                          <button
-                            onClick={() =>
-                              handleRemoveMembre(
-                                tache.id as number,
-                                membre.id as number,
-                              )
-                            }
-                            className="hover:text-red-600 hover:bg-red-100 text-red-500 rounded-full p-0.5 transition-colors ml-1"
-                          >
-                            <UserRoundX size={10} />
-                          </button>
-                        )}
-                      </span>
-                    ))}
-                </div>
-              )}
-
-              {/* ACTIONS & ÉTAT */}
-              <div className={`flex items-center gap-2 ${isCompactLayout ? "w-full justify-between mt-1" : "flex-col items-end justify-start"}`}>
-                 <div className="flex-shrink-0">
+              <div className={`flex ${isCompactLayout ? "w-full flex-row items-center justify-end mt-2" : "w-full flex-col items-end"} gap-2`}>
                   {!isGuest && !showMyTasksOnly ? (
                     <select
-                      className={`text-xs p-1.5 rounded-lg border border-slate-200 outline-none bg-slate-50 focus:border-blue-300 transition-colors ${isCompactLayout ? "w-auto min-w-[120px]" : "w-32"}`}
+                      className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-xs p-1.5 rounded-lg border border-blue-200 outline-none bg-blue-50 text-blue-800`}
                       value={tache.etat}
                       onChange={async (e) => {
                         if (tache.id !== undefined) {
@@ -423,16 +442,15 @@ export default function WidgetTaches({
                       ))}
                     </select>
                   ) : (
-                    <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-1 text-xs font-medium inline-block text-center min-w-[80px]">
+                    <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-full font-medium`}>
                       {tache.etat.replace("_", " ").toLowerCase()}
-                    </span>
+                    </p>
                   )}
-                 </div>
 
-                 {!isGuest && !showMyTasksOnly && (
+                {!isGuest && !showMyTasksOnly && (
                   <button
                     onClick={() => handleDeleteTache(tache.id as number)}
-                    className="flex items-center justify-center p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
                     title="Supprimer la tâche"
                   >
                     <CircleX size={18} />
