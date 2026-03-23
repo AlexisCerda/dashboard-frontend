@@ -3,7 +3,7 @@
 Bienvenue sur le dépôt Front-End du projet **Dashboard SIDSIC**.
 Cette application web est un bureau virtuel interactif et collaboratif conçu pour les équipes de la Préfecture. Elle permet aux utilisateurs de créer, gérer et partager des configurations de widgets en temps réel au sein de groupes de travail.
 
-**Back-End associé (Spring Boot) :** [Insérer le lien vers le repo Back-End ici]
+**Back-End associé (Spring Boot) :** https://github.com/AlexisCerda/dashboard-backend
 
 ---
 
