@@ -1,64 +1,88 @@
-# Guide d'Installation et de Deploiement - Application SIDSIC
+# Guide d'Installation de l'Application SIDSIC avec PM2
 
-Ce document explique comment deployer l'application complete a partir d'un fichier .jar executable. Ce fichier integre deja la version compilee (dist) de l'application Front-end SIDSIC.
+Ce document explique comment deploier et demarrer l'application complete a partir d'un fichier .jar executable contenant la version du frontend embarquee ("dist").
+Ce processus utilise l'outil PM2 pour que l'execution de l'application Java soit daemonisee (executee et monitoree en arriere-plan pour survivre aux fermetures de terminaux ou redemarrages).
 
-## 1. Prerequis
+## 1. Prerequis du Systeme
 
-Assurez-vous que le serveur ou la machine cible dispose des elements suivants :
+Afin de deploier et gerer correctement l'application via PM2, assurez-vous d'avoir installe les elements suivants sur le serveur cible :
 
-* Java Runtime Environment (JRE) ou Java Development Kit (JDK) version 21 (correspondant a la version de compilation du backend Spring Boot).
-* Acces administrateur sur le serveur ou la machine hote pour ouvrir les ports necessaires (le port par defaut est le 8080).
+* Java Runtime Environment (JRE) version 21 (correspondant a la compilation du backend).
+* Node.js (version 18 ou superieure) associe au gestionnaire NPM.
+* PM2 (Process Manager for Node.js & other applications). L'installation se fait de maniere globale :
 
-Pour verifier la presence de Java, utilisez la commande suivante dans un terminal :
+Dans le terminal ou l'invite de commande (en tant qu'administrateur), executez :
 ```bash
-java -version
+npm install -g pm2
 ```
 
-## 2. Fichiers necessaires
-
-Pour l'installation, vous devez disposer des fichiers suivants :
-* application-sidsic.jar (le nom exact de votre archive .jar).
-* application.properties ou application.yml (optionnel, si vous avez besoin de surcharger la configuration par defaut du systeme).
-
-Note : La base de donnees H2 utilisee par l'application est embarquee, ce qui signifie qu'aucune installation de systeme de base de donnees tiers (comme PostgreSQL ou MySQL) n'est requise.
-
-## 3. Configuration de l'environnement (Optionnel)
-
-Si vous utilisez un fichier application.properties externe, placez-le dans le meme dossier que le .jar. L'application le lira automatiquement pour remplacer ses parametres par defaut. 
-Vous pouvez modifier des parametres comme le port du serveur en ajoutant la ligne suivante :
-server.port=8080
-
-## 4. Lancement de l'application
-
-Ouvrez un terminal (ou invite de commande), naviguez jusqu'au repertoire contenant votre .jar, et executez la commande suivante :
-
+Pour verifier que PM2 a ete installe avec succes, executez :
 ```bash
-java -jar nom-de-votre-fichier.jar
+pm2 -v
 ```
 
-Execution en arriere-plan (cas d'un serveur Linux) :
-Pour que l'application continue de fonctionner apres la fermeture du terminal, utilisez nohup :
+## 2. Preparation des Fichiers
+
+Creez un dossier specifique sur votre serveur pour l'application. Vous devez y inserer :
+* Le fichier application.jar de votre projet SIDSIC.
+* Le fichier application.properties ou application.yml (optionnel, uniquement pour parametrer un port different ou the base de donnees).
+
+Note conernant la portabilite : Le .jar incorpore et deploie la version build du front-end React, et utilise une base de donnees H2 locale preconfiguree. Il constitue le seul veritable element requis.
+
+## 3. Demarrage de l'Application Java via PM2
+
+PM2 peut orchestrer tout type de script en plus du JavaScript, y compris les binaires Java. 
+Ouvrez le terminal dans le repertoire ou se trouve votre fichier .jar, et lancez la commande suivante :
+
 ```bash
-nohup java -jar nom-de-votre-fichier.jar > logs.txt 2>&1 &
+pm2 start java --name "sidsic" -- -jar nom-du-fichier-build.jar
 ```
+Remplacez "nom-du-fichier-build.jar" par le titre de votre .jar SIDSIC.
 
-Lors du demarrage, l'application Spring Boot initialisera la base de donnees H2 embarquee, deploiera les API REST et servira automatiquement les fichiers statiques du front-end.
+Le terminal affichera un tableau recapitulatif confirmant que le processus appele "sidsic" a bien ete demarre, qu'il est "online", assigne a un identifiant, et suivi continu en tache de fond.
 
-## 5. Acces a l'application
+Lors du demarrage, l'application initiale le systeme de base de donnees et lance les APIs REST, en ouvrant l'application vers l'exterieur sur le port 8080 (ou le port enonce dans les proprietes additionnelles).
 
-Une fois les logs du terminal indiquant la fin du demarrage de l'application, le deploiement est termine.
+## 4. Sauvegarde au Redemarrage (Optionnel mais recommande)
 
-Vous pouvez acceder a l'application en ouvrant un navigateur web et en naviguant vers l'URL correspondante :
-* En local : http://localhost:8080
-* Sur un serveur distant : http://<ADRESSE_IP_DU_SERVEUR>:8080
+Afin d'assurer que PM2 relance de maniere autonome l'application SIDSIC en cas d'arret complet de la machine host/serveur, vous devez enregistrer la liste actuelle et ajouter un script Startup lie au systeme d'exploitation associe.
 
-L'interface utilisateur SIDSIC s'affichera, et les requetes /api seront automatiquement gerees par le meme serveur.
+Dans le terminal, tapez :
+```bash
+pm2 save
+```
+Ensuite, configurez le lanceur de machine au boot selon la plateforme d'accueuil de maniere automatique en tapant :
+```bash
+pm2 startup
+```
+(Remarque : Cette derniere commande affichera surement une seconde instruction a copier-coller dans votre terminal, suivez ce qui est indique a l'ecran).
 
-## 6. Arret de l'application
+## 5. Acces a l'Application
 
-* Si l'application a ete lancee dans un terminal interactif, utilisez la combinaison de touches Ctrl + C.
-* Si l'application a ete lancee en arriere-plan, trouvez l'identifiant du processus (PID) et arretez-le de cette maniere :
-  ```bash
-  ps -ef | grep java
-  kill -9 <PID>
-  ```
+Le processus etant relaye via PM2 et initialise, ouvrez le navigateur de votre choix et dirigez-vous vers l'URL d'audience de la machine hebergeant le fichier :
+
+* En developpement/Machine locale : http://localhost:8080
+* En environnement cible : http://<ADRESSE_IP>:8080
+
+L'interface de l'application sera disponible immediatement.
+
+## 6. Commandes Utiles (Maintenance PM2)
+
+En cours de developpement ou lors de l'exploitation de l'application, voici quelques commandes de necessite basique :
+
+1. Visualiser les logs / les erreurs :
+```bash
+pm2 logs sidsic
+```
+2. Redemarrer l'application suite a un changement serveur :
+```bash
+pm2 restart sidsic
+```
+3. Arreter temporairement le processus :
+```bash
+pm2 stop sidsic
+```
+4. Supprimer l'application totalement du monitoring PM2 :
+```bash
+pm2 delete sidsic
+```
