@@ -4,7 +4,7 @@ import SelectGroupe from "../components/SelectGroupe";
 import { ButtonAdminGroupe } from "../components/ButtonAdminGroupe";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
-import { LogOut, SquarePlus, X, Plus } from "lucide-react"; // Ajout de l'icône Plus
+import { LogOut, SquarePlus, X, Plus } from "lucide-react";
 import ConfirmModal from "../components/ConfirmeModalProps";
 import {
   ROLE_ADMIN,
@@ -29,11 +29,13 @@ import WidgetNotes from "../components/Widgets/WidgetNotes";
 import WidgetAchats from "../components/Widgets/WidgetAchats";
 import WidgetPrets from "../components/Widgets/WidgetPrets";
 import WidgetMouvements from "../components/Widgets/WidgetMouvement";
+import WidgetImages from "../components/Widgets/WidgetImage";
 import type { Configuration } from "../types/Configuration";
 
 const ReactGridLayout = WidthProvider(RGL);
 
-const WIDGETS: string[] = [
+// Les widgets uniques (un seul par bureau)
+const WIDGETS_SINGLETONS: string[] = [
   "Taches",
   "Notes",
   "Achats",
@@ -70,21 +72,24 @@ export default function DashboardPage() {
     document.body.classList.toggle("widget-interacting", active);
   }, []);
 
-  const availableWidgets = WIDGETS.filter(
-    (widgetName) => !layout.some((item) => item.i === widgetName)
+  const availableWidgets = WIDGETS_SINGLETONS.filter(
+    (widgetName) => !layout.some((item) => item.i === widgetName),
   );
 
-  
   useEffect(() => {
     if (configCurrent !== null && configs.length > 0) {
       if (loadedConfigId.current !== configCurrent) {
         const currentConfig = configs.find((c) => c.id === configCurrent);
-        
         if (currentConfig) {
           const newLayout: any[] = [];
-          
+
           const parseWidget = (id: string, dataStr: any) => {
-            if (dataStr && typeof dataStr === "string" && dataStr !== "null" && dataStr.trim() !== "") {
+            if (
+              dataStr &&
+              typeof dataStr === "string" &&
+              dataStr !== "null" &&
+              dataStr.trim() !== ""
+            ) {
               try {
                 newLayout.push({ i: id, ...JSON.parse(dataStr) });
               } catch (e) {
@@ -99,6 +104,21 @@ export default function DashboardPage() {
           parseWidget("Prets", currentConfig.prets);
           parseWidget("Mouvements", currentConfig.mouvements);
 
+          if (
+            currentConfig.images &&
+            typeof currentConfig.images === "string" &&
+            currentConfig.images.trim() !== "null"
+          ) {
+            try {
+              const imagesLayouts = JSON.parse(currentConfig.images);
+              if (Array.isArray(imagesLayouts)) {
+                newLayout.push(...imagesLayouts);
+              }
+            } catch (e) {
+              console.error("Erreur parsing Images multiples", e);
+            }
+          }
+
           setLayout(newLayout);
           loadedConfigId.current = configCurrent;
         }
@@ -110,12 +130,9 @@ export default function DashboardPage() {
   }, [configCurrent, configs]);
 
   const SaveLayoutBD = useCallback(
-    (nouveauLayout: any) => { 
+    (nouveauLayout: any) => {
       if (!configCurrent) return;
-
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
       saveTimeoutRef.current = setTimeout(async () => {
         const currentConfig = configs.find((c) => c.id === configCurrent);
@@ -123,34 +140,55 @@ export default function DashboardPage() {
 
         const updatedConfig: Configuration = { ...currentConfig };
 
-        WIDGETS.forEach((widgetName) => {
+        WIDGETS_SINGLETONS.forEach((widgetName) => {
           const item = nouveauLayout.find((l: any) => l.i === widgetName);
-          let layoutStr: string | null = null; 
-          
+          let layoutStr: string | null = null;
           if (item) {
-            const layoutData = {
+            layoutStr = JSON.stringify({
               x: item.x || 0,
               y: item.y || 0,
               w: item.w || 4,
               h: item.h || 4,
-            };
-            layoutStr = JSON.stringify(layoutData);
+            });
           }
-
           switch (widgetName) {
-            case "Taches": updatedConfig.taches = layoutStr as any; break;
-            case "Notes": updatedConfig.notes = layoutStr as any; break;
-            case "Achats": updatedConfig.achats = layoutStr as any; break;
-            case "Prets": updatedConfig.prets = layoutStr as any; break;
-            case "Mouvements": updatedConfig.mouvements = layoutStr as any; break;
+            case "Taches":
+              updatedConfig.taches = layoutStr as any;
+              break;
+            case "Notes":
+              updatedConfig.notes = layoutStr as any;
+              break;
+            case "Achats":
+              updatedConfig.achats = layoutStr as any;
+              break;
+            case "Prets":
+              updatedConfig.prets = layoutStr as any;
+              break;
+            case "Mouvements":
+              updatedConfig.mouvements = layoutStr as any;
+              break;
           }
         });
+        const imagesWidgets = nouveauLayout
+          .filter((item: any) => item.i.startsWith("Image-"))
+          .map((item: any) => ({
+            i: item.i,
+            x: item.x,
+            y: item.y,
+            w: item.w,
+            h: item.h,
+          }));
+
+        updatedConfig.images =
+          imagesWidgets.length > 0
+            ? JSON.stringify(imagesWidgets)
+            : (null as any);
 
         try {
           const updated = await UpdateConfig(updatedConfig);
           if (updated && typeof updated === "object" && updated.id) {
             setConfigs((prev) =>
-              prev.map((c) => (c.id === updated.id ? updated : c))
+              prev.map((c) => (c.id === updated.id ? updated : c)),
             );
           }
         } catch (erreur) {
@@ -158,10 +196,10 @@ export default function DashboardPage() {
         }
       }, 500);
     },
-    [configCurrent, configs, UpdateConfig]
+    [configCurrent, configs, UpdateConfig],
   );
 
-  const handleAddWidget = (widgetName: string) => {
+  const handleAddWidget = (widgetName: string, isMultiple = false) => {
     const cols = 24;
     const maxRows = 24;
     const widgetW = 4;
@@ -178,7 +216,6 @@ export default function DashboardPage() {
       });
 
     let foundPosition: { x: number; y: number } | null = null;
-
     for (let y = 0; y <= maxRows - widgetH; y += widgetH) {
       for (let x = 0; x <= cols - widgetW; x += widgetW) {
         if (!hasCollision(x, y)) {
@@ -194,12 +231,12 @@ export default function DashboardPage() {
       return;
     }
 
-    if (erreur === "Plus de place disponible pour ajouter un widget.") {
-      setErreur("");
-    }
+    setErreur("");
+
+    const finalId = isMultiple ? `${widgetName}-${Date.now()}` : widgetName;
 
     const newItem = {
-      i: widgetName,
+      i: finalId,
       x: foundPosition.x,
       y: foundPosition.y,
       w: widgetW,
@@ -217,7 +254,7 @@ export default function DashboardPage() {
       setLayout(layoutActuel);
       SaveLayoutBD(layoutActuel);
     },
-    [SaveLayoutBD, toggleGridInteractionClass]
+    [SaveLayoutBD, toggleGridInteractionClass],
   );
 
   const handleLayoutLiveChange = useCallback((newLayout: any) => {
@@ -235,17 +272,17 @@ export default function DashboardPage() {
         setConfigCurrent((prev) =>
           prev && resultatConfig.some((c) => c.id === prev)
             ? prev
-            : resultatConfig[0].id
+            : resultatConfig[0].id,
         );
         setConfigs(resultatConfig);
       }
     }
   };
 
-  const handleRemoveWidget = (widgetName: string) => {
+  const handleRemoveWidget = (widgetId: string) => {
     setLayout((prevLayout) => {
-      const newLayout = prevLayout.filter((item) => item.i !== widgetName);
-      SaveLayoutBD(newLayout); 
+      const newLayout = prevLayout.filter((item) => item.i !== widgetId);
+      SaveLayoutBD(newLayout);
       return newLayout;
     });
   };
@@ -255,9 +292,7 @@ export default function DashboardPage() {
   }, [context?.groupeActifId, refreshVersion]);
 
   useEffect(() => {
-    return () => {
-      toggleGridInteractionClass(false);
-    };
+    return () => toggleGridInteractionClass(false);
   }, [toggleGridInteractionClass]);
 
   useEffect(() => {
@@ -266,16 +301,21 @@ export default function DashboardPage() {
       if (context?.groupeActifId) {
         const resultatUser: User[] = await GetUsersByRole(
           Number(context.groupeActifId),
-          ROLE_ADMIN
+          ROLE_ADMIN,
         );
         if (resultatUser.length === 0) {
-          setErreur("Mode Urgence activé. Il n'y a aucun Admin dans le groupe. Veuillez en mettre un !");
+          setErreur(
+            "Mode Urgence activé. Il n'y a aucun Admin dans le groupe. Veuillez en mettre un !",
+          );
         }
         const resultatUserGuest: User[] = await GetUsersByRole(
           Number(context.groupeActifId),
-          ROLE_INVITE
+          ROLE_INVITE,
         );
-        setIsGuest(resultatUserGuest.find((u) => u.id === context.auth.idUser) !== undefined);
+        setIsGuest(
+          resultatUserGuest.find((u) => u.id === context.auth.idUser) !==
+            undefined,
+        );
       }
     };
     fetchUser();
@@ -283,29 +323,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!context?.groupeActifId || context.auth.idUser == null) return;
-
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
       webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
       reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
-          if (message.body === "REFRESH_MEMBRES") {
+          if (message.body === "REFRESH_MEMBRES")
             setRefreshVersion((prev) => prev + 1);
-          }
         });
       },
     });
-
-    const activationTimer = window.setTimeout(() => {
-      stompClient.activate();
-    }, 150);
-
+    const activationTimer = window.setTimeout(
+      () => stompClient.activate(),
+      150,
+    );
     return () => {
       window.clearTimeout(activationTimer);
-      if (stompClient.active) {
-        void stompClient.deactivate();
-      }
+      if (stompClient.active) void stompClient.deactivate();
     };
   }, [context?.groupeActifId, context?.auth.idUser]);
 
@@ -374,110 +409,176 @@ export default function DashboardPage() {
       />
 
       <div className="flex-1 min-h-0">
-        <main className="h-full overflow-y-scroll overflow-x-hidden relative p-6 bg-slate-50" id="widget-desktop">
-        <div className="mb-4 flex items-center gap-2 flex-wrap">
-          <SelectGroupe key={`select-${refreshVersion}`} />
-          {isGuest && <p className="inline-flex bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-1 text-xs font-medium">Invité</p>}
-          {!isGuest && <p className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2 py-1 text-xs font-medium">Membre</p>}
-          <div className="flex items-center gap-2">
-            <ButtonAdminGroupe key={`admin-${refreshVersion}`} />
-            {context?.isLogged && (
-              <Link
-                to="/add-group"
-                className="p-2 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                title="Ajouter un groupe"
-              >
-                <SquarePlus size={20} />
-              </Link>
-            )}
-            {context?.auth.idUser != null && (
-              <button
-                className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                onClick={() => setIsModalOpen(true)}
-                title="Quitter le groupe"
-              >
-                <LogOut size={20} />
-              </button>
-            )}
-          </div>
-          {erreur && (
-            <div className="ml-auto px-3 py-2 bg-red-50 text-red-700 rounded-lg border border-red-200 text-xs font-medium">
-              {erreur}
-            </div>
-          )}
-        </div>
-        <ReactGridLayout
-          className="layout"
-          layout={layout}
-          cols={24}
-          rowHeight={60}
-          onLayoutChange={handleLayoutLiveChange}
-          onDragStart={() => toggleGridInteractionClass(true)}
-          onResizeStart={() => toggleGridInteractionClass(true)}
-          onDragStop={(layoutActuel: any) => handleLayoutCommit(layoutActuel)}
-          onResizeStop={(layoutActuel: any) => handleLayoutCommit(layoutActuel)}
-          draggableHandle=".drag-handle"
-          margin={[16, 16]}
-          maxRows={24}
-          compactType={null}
-          preventCollision={true}
+        <main
+          className="h-full overflow-y-scroll overflow-x-hidden relative p-6 bg-slate-50"
+          id="widget-desktop"
         >
-          {layout.map((item) => (
-            <div key={item.i}>
-              {item.i === "Taches" && <WidgetTaches onClose={() => handleRemoveWidget("Taches")} isGuest={isGuest} />}
-              {item.i === "Notes" && <WidgetNotes onClose={() => handleRemoveWidget("Notes")} isGuest={isGuest} />}
-              {item.i === "Achats" && <WidgetAchats onClose={() => handleRemoveWidget("Achats")} isGuest={isGuest} />}
-              {item.i === "Prets" && <WidgetPrets onClose={() => handleRemoveWidget("Prets")} isGuest={isGuest} />}
-              {item.i === "Mouvements" && <WidgetMouvements onClose={() => handleRemoveWidget("Mouvements")} isGuest={isGuest} />}
-            </div>
-          ))}
-        </ReactGridLayout>
-
-        <div
-          className={`fixed top-0 right-0 h-full bg-white shadow-[-4px_0_15px_rgba(15,23,42,0.08)] border-l border-slate-100 transition-transform duration-300 z-100 ${
-            isSidebarOpen ? "translate-x-0" : "translate-x-full"
-          }`}
-          style={{ width: "250px" }}
-        >
-          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 text-slate-800">
-            <h3 className="font-bold">Ajouter un Widget</h3>
-            <button onClick={() => setIsSidebarOpen(false)} className="hover:text-red-500">
-              <X size={20} />
-            </button>
-          </div>
-          <div className="p-4 space-y-3 overflow-y-auto h-[calc(100%-60px)]">
-            {availableWidgets.length === 0 ? (
-              <p className="text-gray-500 text-sm italic">
-                Tous les widgets sont déjà sur le bureau !
+          <div className="mb-4 flex items-center gap-2 flex-wrap">
+            <SelectGroupe key={`select-${refreshVersion}`} />
+            {isGuest && (
+              <p className="inline-flex bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-1 text-xs font-medium">
+                Invité
               </p>
-            ) : (
-              availableWidgets.map((widget) => (
+            )}
+            {!isGuest && (
+              <p className="inline-flex bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2 py-1 text-xs font-medium">
+                Membre
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <ButtonAdminGroupe key={`admin-${refreshVersion}`} />
+              {context?.isLogged && (
+                <Link
+                  to="/add-group"
+                  className="p-2 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                  title="Ajouter un groupe"
+                >
+                  <SquarePlus size={20} />
+                </Link>
+              )}
+              {context?.auth.idUser != null && (
+                <button
+                  className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  onClick={() => setIsModalOpen(true)}
+                  title="Quitter le groupe"
+                >
+                  <LogOut size={20} />
+                </button>
+              )}
+            </div>
+            {erreur && (
+              <div className="ml-auto px-3 py-2 bg-red-50 text-red-700 rounded-lg border border-red-200 text-xs font-medium">
+                {erreur}
+              </div>
+            )}
+          </div>
+
+          <ReactGridLayout
+            className="layout"
+            layout={layout}
+            cols={24}
+            rowHeight={60}
+            onLayoutChange={handleLayoutLiveChange}
+            onDragStart={() => toggleGridInteractionClass(true)}
+            onResizeStart={() => toggleGridInteractionClass(true)}
+            onDragStop={(layoutActuel: any) => handleLayoutCommit(layoutActuel)}
+            onResizeStop={(layoutActuel: any) =>
+              handleLayoutCommit(layoutActuel)
+            }
+            draggableHandle=".drag-handle"
+            margin={[16, 16]}
+            maxRows={24}
+            compactType={null}
+            preventCollision={true}
+          >
+            {layout.map((item) => (
+              <div key={item.i}>
+                {item.i === "Taches" && (
+                  <WidgetTaches
+                    onClose={() => handleRemoveWidget("Taches")}
+                    isGuest={isGuest}
+                  />
+                )}
+                {item.i === "Notes" && (
+                  <WidgetNotes
+                    onClose={() => handleRemoveWidget("Notes")}
+                    isGuest={isGuest}
+                  />
+                )}
+                {item.i === "Achats" && (
+                  <WidgetAchats
+                    onClose={() => handleRemoveWidget("Achats")}
+                    isGuest={isGuest}
+                  />
+                )}
+                {item.i === "Prets" && (
+                  <WidgetPrets
+                    onClose={() => handleRemoveWidget("Prets")}
+                    isGuest={isGuest}
+                  />
+                )}
+                {item.i === "Mouvements" && (
+                  <WidgetMouvements
+                    onClose={() => handleRemoveWidget("Mouvements")}
+                    isGuest={isGuest}
+                  />
+                )}
+                {item.i.startsWith("Image-") && (
+                  <WidgetImages
+                    widgetId={item.i}
+                    onClose={() => handleRemoveWidget(item.i)}
+                    isGuest={isGuest}
+                  />
+                )}{" "}
+              </div>
+            ))}
+          </ReactGridLayout>
+
+          <div
+            className={`fixed top-0 right-0 h-full bg-white shadow-[-4px_0_15px_rgba(15,23,42,0.08)] border-l border-slate-100 transition-transform duration-300 z-100 ${
+              isSidebarOpen ? "translate-x-0" : "translate-x-full"
+            }`}
+            style={{ width: "250px" }}
+          >
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 text-slate-800">
+              <h3 className="font-bold">Ajouter un Widget</h3>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="hover:text-red-500"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3 overflow-y-auto h-[calc(100%-60px)]">
+              {availableWidgets.map((widget) => (
                 <div
                   key={widget}
-                  onClick={() => handleAddWidget(widget)}
+                  onClick={() => handleAddWidget(widget, false)}
                   className="p-3 bg-slate-50 border border-slate-200 rounded-md shadow-sm cursor-pointer hover:border-green-500 hover:shadow-md hover:bg-green-50 transition-all flex items-center justify-between group"
                 >
-                  <span className="font-medium text-slate-700 group-hover:text-green-700">{widget}</span>
+                  <span className="font-medium text-slate-700 group-hover:text-green-700">
+                    {widget}
+                  </span>
                   <button className="text-slate-400 group-hover:text-green-600 bg-white p-1 rounded-full shadow-sm">
                     <Plus size={16} />
                   </button>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
+              ))}
 
-        {configs.length > 0 && (<button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className={`fixed bottom-16 right-6 p-3 rounded-full shadow-lg text-white transition-all hover:-translate-y-0.5 z-110 ${
-            isSidebarOpen
-              ? "bg-red-500 hover:bg-red-600 rotate-45"
-              : "bg-green-600 hover:bg-green-700 hover:shadow-xl"
-          }`}
-          title="Ajouter un widget"
-        >
-          <SquarePlus size={24} />
-        </button>)}
+              <div className="pt-4 pb-2 border-t border-slate-100 mt-2">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Multiples
+                </p>
+              </div>
+
+              <div
+                onClick={() => handleAddWidget("Image", true)}
+                className="p-3 bg-slate-50 border border-slate-200 rounded-md shadow-sm cursor-pointer hover:border-indigo-500 hover:shadow-md hover:bg-indigo-50 transition-all flex items-center justify-between group"
+              >
+                <span className="font-medium text-slate-700 group-hover:text-indigo-700">
+                  Galerie Image
+                </span>
+                <button className="text-slate-400 group-hover:text-indigo-600 bg-white p-1 rounded-full shadow-sm">
+                  <Plus size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {configs.length > 0 && (
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className={`fixed bottom-16 right-6 p-3 rounded-full shadow-lg text-white transition-all hover:-translate-y-0.5 z-110 ${
+                isSidebarOpen
+                  ? "bg-red-500 hover:bg-red-600 rotate-45"
+                  : "bg-green-600 hover:bg-green-700 hover:shadow-xl"
+              }`}
+              title="Ajouter un widget"
+            >
+              <SquarePlus size={24} />
+            </button>
+          )}
         </main>
       </div>
 
@@ -508,7 +609,7 @@ export default function DashboardPage() {
             </button>
           </div>
         ))}
-        
+
         {isCreatingConfig ? (
           <input
             autoFocus
@@ -517,9 +618,8 @@ export default function DashboardPage() {
             value={newConfigName}
             onChange={(e) => setNewConfigName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                void handleCreateConfig();
-              } else if (e.key === "Escape") {
+              if (e.key === "Enter") void handleCreateConfig();
+              else if (e.key === "Escape") {
                 setIsCreatingConfig(false);
                 setErreur("");
                 setNewConfigName("");

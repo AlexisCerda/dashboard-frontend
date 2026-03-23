@@ -16,6 +16,7 @@ import {
   type MembreDTO,
   type TacheDTO,
 } from "../../services/WidgetService";
+import { useGetConfig } from "../../services/membreService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
@@ -55,8 +56,13 @@ export default function WidgetTaches({
   const [showMyTasksOnly, setShowMyTasksOnly] = useState(false);
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
   const [isCompactLayout, setIsCompactLayout] = useState(false);
+  const [configLimits, setConfigLimits] = useState<{ maxTaches?: number } | null>(null);
+  const [erreur, setErreur] = useState("");
+  const [addingMembreForTacheId, setAddingMembreForTacheId] = useState<number | null>(null);
+  const [inlineSearchTerm, setInlineSearchTerm] = useState("");
   const showMyTasksRef = useRef(showMyTasksOnly);
   const widgetContainerRef = useRef<HTMLDivElement | null>(null);
+  const inlineDropdownRef = useRef<HTMLDivElement | null>(null);
 
   const context = useContext(AuthContext);
   const GetTachesByGroupe = useGetTacheGroupe();
@@ -70,6 +76,7 @@ export default function WidgetTaches({
   const addMembreToTache = useAddMembreToTache();
   const GetUsersbyGroupe = useGetUserByGroupe();
   const UpdateTache = useUpdateTache();
+  const getConfig = useGetConfig();
 
   useEffect(() => {
     showMyTasksRef.current = showMyTasksOnly;
@@ -97,6 +104,19 @@ export default function WidgetTaches({
     };
   }, []);
 
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const cfg = await getConfig();
+        setConfigLimits(cfg ?? null);
+      } catch (error) {
+        console.error("Erreur récupération config", error);
+      }
+    };
+
+    fetchConfig();
+  }, [getConfig]);
+
   const toggleMembreSelection = (membreId: number) => {
     setSelectedMembresIds((prev) =>
       prev.includes(membreId)
@@ -110,6 +130,20 @@ export default function WidgetTaches({
   ) => {
     e.preventDefault();
 
+    if (
+      configLimits?.maxTaches !== undefined &&
+      taches.length >= configLimits.maxTaches
+    ) {
+      setErreur("Nombre maximum de tâches atteint");
+      setIsModalOpen(false);
+      setNom("");
+      setDescription("");
+      setDateDebut("");
+      setDateFin("");
+      setSelectedMembresIds([]);
+      return;
+    }
+
     const data: TacheDTO = {
       id: 0,
       nom: nom,
@@ -121,6 +155,7 @@ export default function WidgetTaches({
     };
 
     const newTache = await addTache(data);
+    setErreur("");
 
     if (newTache && newTache.id && selectedMembresIds.length > 0) {
       await Promise.all(
@@ -155,6 +190,13 @@ export default function WidgetTaches({
   const handleUpdateField = async (tache: TacheDTO) => {
     if (isGuest) return;
     await UpdateTache(tache);
+    refreshData();
+  };
+
+  const handleAddMembreInline = async (tacheId: number, membreId: number) => {
+    await addMembreToTache(tacheId, membreId);
+    setAddingMembreForTacheId(null);
+    setInlineSearchTerm("");
     refreshData();
   };
 
@@ -318,6 +360,11 @@ export default function WidgetTaches({
       options={headerActions}
     >
       <div ref={widgetContainerRef} className="flex flex-col h-full p-3">
+        {erreur && (
+          <div className="mb-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md text-xs font-medium">
+            {erreur}
+          </div>
+        )}
         <div className="mb-3">
           {!isSearchCollapsed && (
             <input
@@ -419,6 +466,61 @@ export default function WidgetTaches({
                           )}
                         </span>
                       ))}
+                    {!isGuest && !showMyTasksOnly && (
+                      <div className="relative" ref={addingMembreForTacheId === tache.id ? inlineDropdownRef : null}>
+                        <button
+                          onClick={() => {
+                            if (addingMembreForTacheId === tache.id) {
+                              setAddingMembreForTacheId(null);
+                              setInlineSearchTerm("");
+                            } else {
+                              setAddingMembreForTacheId(tache.id as number);
+                              setInlineSearchTerm("");
+                            }
+                          }}
+                          className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                          title="Ajouter un membre"
+                        >
+                          <CirclePlus size={12} />
+                        </button>
+                        {addingMembreForTacheId === tache.id && (
+                          <div className="absolute z-50 left-0 top-5 w-44 bg-white border border-slate-200 rounded-lg shadow-lg text-xs">
+                            <input
+                              autoFocus
+                              type="text"
+                              placeholder="Rechercher..."
+                              value={inlineSearchTerm}
+                              onChange={(e) => setInlineSearchTerm(e.target.value)}
+                              className="w-full px-2 py-1.5 border-b border-slate-100 outline-none rounded-t-lg"
+                            />
+                            <div className="max-h-28 overflow-y-auto">
+                              {membresGroupe
+                                .filter((m) => {
+                                  const alreadyIn = membres[tache.id as number]?.some((am) => am.id === m.id);
+                                  const matchSearch = `${m.nom} ${m.prenom}`.toLowerCase().includes(inlineSearchTerm.toLowerCase());
+                                  return !alreadyIn && matchSearch;
+                                })
+                                .map((m) => (
+                                  <div
+                                    key={m.id}
+                                    onClick={() => handleAddMembreInline(tache.id as number, m.id as number)}
+                                    className="px-2 py-1.5 hover:bg-blue-50 cursor-pointer text-slate-700 border-b border-slate-50 last:border-0"
+                                  >
+                                    {m.prenom} {m.nom}
+                                  </div>
+                                ))}
+                              {membresGroupe.filter((m) => {
+                                const alreadyIn = membres[tache.id as number]?.some((am) => am.id === m.id);
+                                const matchSearch = `${m.nom} ${m.prenom}`.toLowerCase().includes(inlineSearchTerm.toLowerCase());
+                                return !alreadyIn && matchSearch;
+                              }).length === 0 && (
+                                <p className="px-2 py-2 text-gray-400 italic text-center">Aucun membre disponible</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

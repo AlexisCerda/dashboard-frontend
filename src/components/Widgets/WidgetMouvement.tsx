@@ -10,6 +10,7 @@ import {
   useUpdateEtatMouvement, 
   useUpdateMouvement, 
 } from "../../services/WidgetService";
+import { useGetConfig } from "../../services/membreService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
@@ -41,6 +42,8 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
   const [isCompactLayout, setIsCompactLayout] = useState(false);
   const widgetContainerRef = useRef<HTMLDivElement | null>(null);
+  const [configLimits, setConfigLimits] = useState<{ maxMouvements?: number } | null>(null);
+  const [erreur, setErreur] = useState("");
 
   const context = useContext(AuthContext);
   const getMouvementGroupe = useGetMouvementGroupe();
@@ -49,9 +52,36 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
   const createMouvement = useCreateMouvement();
   const deleteMouvement = useDeleteMouvement();
   const updateMouvement = useUpdateMouvement();
+  const getConfig = useGetConfig();
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const cfg = await getConfig();
+        setConfigLimits(cfg ?? null);
+      } catch (error) {
+        console.error("Erreur récupération config", error);
+      }
+    };
+
+    fetchConfig();
+  }, [getConfig]);
 
   const handleSubmitMouvement = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (
+      configLimits?.maxMouvements !== undefined &&
+      mouvements.length >= configLimits.maxMouvements
+    ) {
+      setErreur("Nombre maximum de mouvements atteint");
+      setIsModalOpen(false);
+      setNom("");
+      setPrenom("");
+      setDateArrivee("");
+      setDateDepart("");
+      setEtat("");
+      return;
+    }
     
     const data: MouvementDTO = {
       id: 0,
@@ -64,6 +94,7 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
 
     await createMouvement(data);
     await refreshData();
+    setErreur("");
     
     setIsModalOpen(false);
     setNom("");
@@ -212,6 +243,11 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
       options={headerActions}
     >
       <div ref={widgetContainerRef} className="flex flex-col h-full p-3">
+        {erreur && (
+          <div className="mb-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md text-xs font-medium">
+            {erreur}
+          </div>
+        )}
         <div className="mb-3">
           {!isSearchCollapsed && (
             <input

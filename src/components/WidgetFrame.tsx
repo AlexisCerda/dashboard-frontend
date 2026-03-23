@@ -17,7 +17,7 @@ export default function WidgetFrame({
   options,
 }: WidgetFrameProps) {
   return (
-    <div className="widget-frame flex flex-col h-full min-w-0 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+    <div className="widget-frame flex flex-col h-full min-w-0 min-h-[180px] bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
       <div
         className={`${headerColor} px-4 py-2.5 text-sm font-semibold flex items-center gap-3 cursor-move drag-handle`}
       >

@@ -140,15 +140,15 @@ export const useUpdateUser = () => {
 
   const updateUser = async (u : User) => {
     try {
-      const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}`, {
-        method: "PATCH",
+      const response = await fetch(`${API_URL}/membres/`, {
+        method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify({
-        id: context?.auth.idUser,
-        nom: u.nom,
-        prenom : u.prenom,
-        email : u.email
-      }),
+          id: context?.auth.idUser,
+          nom: u.nom,
+          prenom: u.prenom,
+          email: u.email
+        }),
       });
 
       if (!response.ok) {
@@ -678,7 +678,8 @@ export const useUpdateConfiguration = ()=>{
         achats : configuration.achats,
         prets : configuration.prets,
         mouvements : configuration.mouvements,
-        nom : configuration.nom 
+        images: configuration.images,
+        nom : configuration.nom
       }),
       });
 

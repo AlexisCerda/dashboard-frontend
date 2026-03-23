@@ -10,6 +10,7 @@ import SigninPage from "./pages/SigninPage";
 import { AddGroupePage } from "./pages/AddGroupePage";
 import AdminPage from "./pages/Adminpage";
 import AdminRoute from "./components/AdminRoute";
+import TutorialPage from "./pages/TutorialPage";
 import { AuthContext } from "./context/AuthContext";
 import { useContext, useEffect, useState } from "react";
 import { useGetConfig, useGetUser } from "./services/membreService";
@@ -41,6 +42,7 @@ function App() {
     <div className="h-screen w-full flex flex-col overflow-hidden bg-slate-50 text-slate-700">
       <BrowserRouter>
         <NavBar />
+        <div className="flex-1 overflow-y-auto">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/Signin" element={<SigninPage />} />
@@ -52,7 +54,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/help"></Route>
+          <Route path="/help" element={<TutorialPage />} />
           <Route
             path="/update-user"
             element={
@@ -97,6 +99,7 @@ function App() {
             }
           />
         </Routes>
+        </div>
       </BrowserRouter>
     </div>
   );

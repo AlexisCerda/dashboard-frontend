@@ -7,7 +7,7 @@ export interface TacheDTO {
   description: string;
   dateDebut: string | null;
   dateLimite: string | null;
-  etat: string;  
+  etat: string;
   membresIds?: number[];
 }
 
@@ -31,8 +31,8 @@ export interface MouvementDTO {
   nom: string;
   prenom: string;
   dateArrivee: string;
-  dateDepart: string;  
-  etat : string;
+  dateDepart: string;
+  etat: string;
 }
 
 export interface EtatMouvementDTO {
@@ -90,29 +90,36 @@ const getStoredToken = (): string | null => {
   return token;
 };
 
-const getAuthHeaders = (): Record<string, string> => {
+const getAuthHeaders = (isFormData: boolean = false): Record<string, string> => {
   const token = getStoredToken();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, string> = {};
+
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
+  
   return headers;
 };
 
-export const useGetTacheGroupe= () => {
+export const useGetTacheGroupe = () => {
   const context = useContext(AuthContext);
 
   const getTacheGroupe = async () => {
     if (!context?.auth.idUser) {
       return null;
-    } 
+    }
 
-    const response = await fetch(`${API_URL}/groupes/${context?.groupeActifId}/taches`, {
-      method: "GET",
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context?.groupeActifId}/taches`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      },
+    );
 
     if (response.status === 401 || response.status === 404) {
       return null;
@@ -125,22 +132,25 @@ export const useGetTacheGroupe= () => {
     const data = await response.json();
     return data;
   };
-  
+
   return getTacheGroupe;
 };
 
-export const useGetTacheMembre= () => {
+export const useGetTacheMembre = () => {
   const context = useContext(AuthContext);
 
   const getTacheMembre = async () => {
     if (!context?.auth.idUser) {
       return null;
-    } 
+    }
 
-    const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}/taches`, {
-      method: "GET",
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_URL}/membres/${context?.auth.idUser}/taches`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      },
+    );
 
     if (response.status === 401 || response.status === 404) {
       return null;
@@ -153,7 +163,7 @@ export const useGetTacheMembre= () => {
     const data = await response.json();
     return data;
   };
-  
+
   return getTacheMembre;
 };
 
@@ -177,10 +187,13 @@ export const useAddMembreToTache = () => {
 
 export const useDeleteMembreFromTache = () => {
   const deleteMembreFromTache = async (idTache: number, idMembre: number) => {
-    const response = await fetch(`${API_URL}/taches/${idTache}/membres/${idMembre}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_URL}/taches/${idTache}/membres/${idMembre}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Impossible de supprimer le membre de la tache");
@@ -230,11 +243,14 @@ export const useDeleteTache = () => {
 export const useAddTache = () => {
   const context = useContext(AuthContext);
   const addTache = async (tache: TacheDTO) => {
-    const response = await fetch(`${API_URL}/groupes/${context?.groupeActifId}/taches`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(tache),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context?.groupeActifId}/taches`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(tache),
+      },
+    );
 
     if (!response.ok) {
       const errorMsg = await response.text();
@@ -283,13 +299,13 @@ export const useGetEtatTache = () => {
   return getEtatTache;
 };
 
-export const useGetMembreByTache= () => {
+export const useGetMembreByTache = () => {
   const context = useContext(AuthContext);
 
   const getMembreByTache = async (idTache: number) => {
     if (!context?.auth.idUser) {
       return null;
-    } 
+    }
 
     const response = await fetch(`${API_URL}/taches/${idTache}/membres`, {
       method: "GET",
@@ -307,7 +323,7 @@ export const useGetMembreByTache= () => {
     const data = await response.json();
     return data;
   };
-  
+
   return getMembreByTache;
 };
 
@@ -321,10 +337,13 @@ export const useGetMouvementGroupe = () => {
       return null;
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/mouvements`, {
-      method: "GET",
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/mouvements`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      },
+    );
 
     if (response.status === 401 || response.status === 404) {
       return null;
@@ -367,11 +386,14 @@ export const useUpdateMouvement = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/mouvements/${mouvement.id}`, {
-      method: "PUT",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(mouvement),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/mouvements/${mouvement.id}`,
+      {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(mouvement),
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Impossible de mettre à jour le mouvement");
@@ -391,11 +413,14 @@ export const useCreateMouvement = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/mouvements`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(mouvement),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/mouvements`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(mouvement),
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Impossible de créer le mouvement");
@@ -415,10 +440,13 @@ export const useDeleteMouvement = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/mouvements/${idMouvement}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/mouvements/${idMouvement}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Impossible de supprimer le mouvement");
@@ -474,10 +502,13 @@ export const useGetAchatGroupe = () => {
       return null;
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/achats`, {
-      method: "GET",
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/achats`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      },
+    );
 
     if (response.status === 401 || response.status === 404) {
       return null;
@@ -520,11 +551,14 @@ export const useUpdateAchat = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/achats/${achat.id}`, {
-      method: "PUT",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(achat),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/achats/${achat.id}`,
+      {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(achat),
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Impossible de mettre à jour l'achat");
@@ -544,11 +578,14 @@ export const useCreateAchat = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/achats`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(achat),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/achats`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(achat),
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Impossible de créer l'achat");
@@ -568,10 +605,13 @@ export const useDeleteAchat = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/achats/${idAchat}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/achats/${idAchat}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Impossible de supprimer l'achat");
@@ -627,10 +667,13 @@ export const useGetPretGroupe = () => {
       return null;
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/prets`, {
-      method: "GET",
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/prets`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      },
+    );
 
     if (response.status === 401 || response.status === 404) {
       return null;
@@ -673,11 +716,14 @@ export const useUpdatePret = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/prets/${pret.id}`, {
-      method: "PUT",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(pret),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/prets/${pret.id}`,
+      {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(pret),
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Impossible de mettre à jour le pret");
@@ -697,11 +743,14 @@ export const useCreatePret = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/prets`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(pret),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/prets`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(pret),
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Impossible de créer le pret");
@@ -721,10 +770,13 @@ export const useDeletePret = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/prets/${idPret}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_URL}/groupes/${context.groupeActifId}/prets/${idPret}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Impossible de supprimer le pret");
@@ -780,10 +832,13 @@ export const useGetNotesByMembre = () => {
       return null;
     }
 
-    const response = await fetch(`${API_URL}/membres/${context.auth.idUser}/notes`, {
-      method: "GET",
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_URL}/membres/${context.auth.idUser}/notes`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      },
+    );
 
     if (response.status === 401 || response.status === 404) {
       return null;
@@ -808,11 +863,14 @@ export const useUpdateNoteByMembre = () => {
       throw new Error("Utilisateur non connecté");
     }
 
-    const response = await fetch(`${API_URL}/membres/${context.auth.idUser}/notes/${note.id}`, {
-      method: "PUT",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(note),
-    });
+    const response = await fetch(
+      `${API_URL}/membres/${context.auth.idUser}/notes/${note.id}`,
+      {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(note),
+      },
+    );
 
     if (!response.ok) {
       throw new Error("Impossible de mettre à jour la note");
@@ -832,11 +890,14 @@ export const useCreateNoteByMembre = () => {
       throw new Error("Utilisateur non connecté");
     }
 
-    const response = await fetch(`${API_URL}/membres/${context.auth.idUser}/notes`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(note),
-    });
+    const response = await fetch(
+      `${API_URL}/membres/${context.auth.idUser}/notes`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(note),
+      },
+    );
 
     if (!response.ok) {
       const errorMsg = await response.text();
@@ -865,3 +926,97 @@ export const useDeleteNote = () => {
 
   return deleteNote;
 };
+
+// ############### PARTIE IMAGES ###############
+
+export interface ImageDTO {
+  id: number;
+  nom: string;
+  path: string;
+}
+
+export const useGetImagesByMembre = () => {
+  const context = useContext(AuthContext);
+  const getImagesByMembre = async (idMembre?: number) => {
+    const membreId = idMembre ?? context?.auth.idUser;
+    if (!membreId) return [];
+    const response = await fetch(`${API_URL}/membres/${membreId}/images`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+    if (response.status === 404) {
+      return [];
+    }
+    if (!response.ok)
+      throw new Error("Impossible de récupérer les images du membre");
+    return await response.json();
+  };
+  return getImagesByMembre;
+};
+
+export const useCreateImageByMembre = () => {
+  const context = useContext(AuthContext);
+
+  const createImageByMembre = async (file: File, idMembre?: number) => {
+    const membreId = idMembre ?? context?.auth.idUser;
+    if (!membreId) throw new Error("Utilisateur non connecté");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const headers: Record<string, string> = {};
+    
+    const token = getStoredToken(); 
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_URL}/membres/${membreId}/images`, {
+      method: "POST",
+      headers: headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Détail Spring Boot :", errorText);
+      throw new Error("Impossible de créer l'image : " + response.status);
+    }
+    
+    return await response.json();
+  };
+
+  return createImageByMembre;
+};
+
+export const useUpdateImageByMembre = () => {
+  const context = useContext(AuthContext);
+  const updateImageByMembre = async (image: ImageDTO, idMembre?: number) => {
+    const membreId = idMembre ?? context?.auth.idUser;
+    if (!membreId) throw new Error("Utilisateur non connecté");
+    const response = await fetch(
+      `${API_URL}/membres/${membreId}/images/${image.id}`,
+      {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(image),
+      },
+    );
+    if (!response.ok) throw new Error("Impossible de mettre à jour l'image");
+    return await response.json();
+  };
+  return updateImageByMembre;
+};
+
+export const useDeleteImage = () => {
+  const deleteImage = async (idImage: number) => {
+    const response = await fetch(`${API_URL}/images/${idImage}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error("Impossible de supprimer l'image");
+    return await response.text();
+  };
+  return deleteImage;
+};
+

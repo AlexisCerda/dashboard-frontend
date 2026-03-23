@@ -8,6 +8,7 @@ import {
   useGetNotesByMembre, 
   useUpdateNoteByMembre, 
 } from "../../services/WidgetService";
+import { useGetConfig } from "../../services/membreService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
@@ -25,15 +26,41 @@ export default function WidgetNotes({ onClose }: { onClose?: () => void; isGuest
   const [description, setDescription] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
+  const [configLimits, setConfigLimits] = useState<{ maxNotes?: number } | null>(null);
+  const [erreur, setErreur] = useState("");
 
   const context = useContext(AuthContext);
   const getNotesByMembre = useGetNotesByMembre();
   const updateNoteByMembre = useUpdateNoteByMembre();
   const createNoteByMembre = useCreateNoteByMembre();
   const deleteNote = useDeleteNote();
+  const getConfig = useGetConfig();
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const cfg = await getConfig();
+        setConfigLimits(cfg ?? null);
+      } catch (error) {
+        console.error("Erreur récupération config", error);
+      }
+    };
+
+    fetchConfig();
+  }, [getConfig]);
 
   const handleSubmitNote = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (
+      configLimits?.maxNotes !== undefined &&
+      notes.length >= configLimits.maxNotes
+    ) {
+      setErreur("Nombre maximum de notes atteint");
+      setIsModalOpen(false);
+      setDescription("");
+      return;
+    }
     
     const data: NoteDTO = {
       id: 0,
@@ -45,6 +72,7 @@ export default function WidgetNotes({ onClose }: { onClose?: () => void; isGuest
       await refreshData();
       setIsModalOpen(false);
       setDescription("");
+      setErreur("");
     } catch (error: any) {
       alert(error.message);
     }
@@ -134,6 +162,11 @@ export default function WidgetNotes({ onClose }: { onClose?: () => void; isGuest
       options={headerActions}
     >
       <div className="flex flex-col h-full p-3">
+        {erreur && (
+          <div className="mb-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md text-xs font-medium">
+            {erreur}
+          </div>
+        )}
         <div className="mb-3">
           {!isSearchCollapsed && (
             <input

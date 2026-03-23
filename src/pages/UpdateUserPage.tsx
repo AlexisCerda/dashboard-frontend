@@ -41,7 +41,6 @@ export default function UpdateUserPage() {
 
   async function handleLeave(userId: string) {
     try {
-      console.log("Suppression du compte en cours d'envoi au serveur...");
       await DeleteUser(userId);
       context?.logout();
     } catch (error) {
@@ -58,7 +57,6 @@ export default function UpdateUserPage() {
       if(password){
         try {
           const resultat = await UpdatePwdUser(password);
-          console.log("réponse PWD :", resultat);
         } catch (error) {
           setErreur("Mot de passe invalide");
           return;
@@ -67,7 +65,6 @@ export default function UpdateUserPage() {
 
       try {
         const resultat = await UpdateUser({ nom, prenom, email });
-        console.log("réponse:", resultat);
         if (resultat.token && context?.auth.idUser) {
           context.login(context.auth.idUser, resultat.token);
         }

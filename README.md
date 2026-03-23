@@ -1,73 +1,73 @@
-# React + TypeScript + Vite
+# SIDSIC Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Application web de gestion de groupes et de collaboration en temps réel, développée avec **React**, **TypeScript**, et **Vite**.
 
-Currently, two official plugins are available:
+Ce tableau de bord (Dashboard) modulable permet d'administrer des équipes et de gérer divers éléments collaboratifs sous forme de "Widgets".
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Fonctionnalités Principales
 
-## React Compiler
+- **Authentification et Gestion des Rôles** : Accès sécurisé avec gestion des rôles (Administrateur, Membre, Invité).
+- **Gestion des Groupes** : Création, modification et administration des groupes et de leurs membres.
+- **Tableau de Bord Modulable** : Interface personnalisable grâce à `react-grid-layout`, permettant de disposer les widgets librement.
+- **Widgets Intégrés** :
+  - 📝 **Notes** : Prise de notes collaborative rapide.
+  - ✅ **Tâches** : Suivi de tâches avec assignation de membres, dates de début/limite, et changement d'états.
+  - 📦 **Achats** : Suivi des achats matériels (nom, référence, quantité, état).
+  - 🔄 **Prêts** : Suivi du matériel prêté aux membres du groupe (matériel, dates d'emprunt, état).
+  - 🚪 **Mouvements** : Suivi des entrées et sorties (arrivées/départs des personnes, états).
+  - 🖼️ **Images** : Affichage d'images sur le tableau de bord.
+- **Communication Temps Réel** : Intégration de WebSockets via `@stomp/stompjs` et `sockjs-client` pour des mises à jour en direct.
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+## 🛠️ Stack Technique
 
-## Expanding the ESLint configuration
+- **Framework** : React 19
+- **Langage** : TypeScript
+- **Outil de Build** : Vite
+- **Routage** : React Router DOM v7
+- **Style** : Tailwind CSS v4
+- **Composants UI / Grille** : React Grid Layout
+- **Icônes** : Lucide React
+- **WebSockets** : STOMP (StompJS / SockJS)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 📂 Architecture du Projet
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Le code source se trouve principalement dans le dossier `src/` :
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- `assets/` : Ressources statiques (images, logos).
+- `components/` : Composants réutilisables.
+  - `Widgets/` : Ensemble des widgets affichés sur le tableau de bord (Tâches, Achats, Notes, etc.).
+- `context/` : Contextes React, tels que `AuthContext` pour la gestion de session.
+- `pages/` : Les pages principales (Dashboard, Connexion, Inscription, Tutoriel, Administration, etc.).
+- `services/` : Fonctions d'appels API (ex: `WidgetService.ts`, `authService.ts`, `membreService.ts`).
+- `types/` : Définition des types et interfaces globaux TypeScript.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 💻 Développement Local
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Prérequis
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- Node.js (version 18 ou supérieure recommandée)
+- npm (ou pnpm / yarn)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Installation et Exécution
+
+1. Installer les dépendances :
+   ```bash
+   npm install
+   ```
+
+2. Démarrer le serveur de développement :
+   ```bash
+   npm run dev
+   ```
+
+3. Construire le projet pour la production :
+   ```bash
+   npm run build
+   ```
+
+## 📜 Scripts Disponibles
+
+- `npm run dev` : Lance le serveur en mode développement.
+- `npm run build` : Compile le TypeScript et génère la version de production dans le dossier `dist/`.
+- `npm run lint` : Vérifie le code via ESLint.
+- `npm run preview` : Lance un serveur local pour tester la version `dist/`.
