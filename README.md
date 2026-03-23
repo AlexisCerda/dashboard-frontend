@@ -51,18 +51,12 @@ Cette application web est un bureau virtuel interactif et collaboratif conçu po
 
 ### 2. Cloner le projet
 
-```bash
 git clone [https://github.com/AlexisCerda/dashboard-frontend.git](https://github.com/AlexisCerda/dashboard-frontend.git)
 cd dashboard-frontend
-```
-
-````
 
 ### 3. Installer les dépendances
 
-```bash
 npm install
-```
 
 ### 4. Variables d'environnement
 
@@ -72,19 +66,13 @@ Assurez-vous que l'URL de votre API correspond à votre serveur. Par défaut, le
 
 Si vous utilisez **Create React App** :
 
-```bash
 npm start
-```
 
 Si vous utilisez **Vite** :
 
-```bash
 npm run dev
-```
 
 L'application sera accessible sur `http://localhost:3000` (ou `http://localhost:5173` pour Vite).
-
----
 
 ## Architecture et Choix Techniques
 
@@ -92,16 +80,6 @@ L'application sera accessible sur `http://localhost:3000` (ou `http://localhost:
 - **Services Séparés :** Les appels API sont isolés dans le dossier `services/` (ex: `membreService.ts`, `WidgetService.ts`) pour séparer la logique métier de l'interface graphique.
 - **Gestion des envois de fichiers :** Pour le téléversement d'images, l'utilisation stricte de l'objet natif `FormData` et de l'objet `Headers` (sans forcer le `Content-Type`) permet de déléguer la construction du _boundary multipart_ au navigateur, évitant ainsi les rejets 415 (Unsupported Media Type) du backend Java.
 
----
-
 ## Auteur
 
 Développé par **Alexis Cerda De Almeida Vilaca** dans le cadre des projets de la Préfecture (SIDSIC).
-
-```
-
-***
-
-C'est propre, complet, et ça montre à n'importe quel développeur ou recruteur qui passera sur ton profil GitHub que tu maîtrises des concepts avancés (WebSockets, TypeScript, Upload Multipart, Drag&Drop).
-```
-````
