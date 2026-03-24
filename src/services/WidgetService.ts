@@ -75,7 +75,8 @@ export interface NoteDTO {
   description: string;
 }
 
-const API_URL = "http://localhost:8080/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+
 
 export const ROLE_INVITE = 0;
 export const ROLE_ADMIN = 1;
@@ -101,8 +102,8 @@ const getAuthHeaders = (isFormData: boolean = false): Record<string, string> => 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  
-  return headers;
+
+    return headers;
 };
 
 export const useGetTacheGroupe = () => {
@@ -327,7 +328,7 @@ export const useGetMembreByTache = () => {
   return getMembreByTache;
 };
 
-//############### PARTIE MOUVEMENTS ###############
+
 
 export const useGetMouvementGroupe = () => {
   const context = useContext(AuthContext);
@@ -492,7 +493,7 @@ export const useGetAllEtatsMouvement = () => {
   return getAllEtatsMouvement;
 };
 
-//############### PARTIE ACHATS ###############
+
 
 export const useGetAchatGroupe = () => {
   const context = useContext(AuthContext);
@@ -657,7 +658,7 @@ export const useGetAllEtatsAchat = () => {
   return getAllEtatsAchat;
 };
 
-//############### PARTIE PRETS ###############
+
 
 export const useGetPretGroupe = () => {
   const context = useContext(AuthContext);
@@ -822,7 +823,7 @@ export const useGetAllEtatsPret = () => {
   return getAllEtatsPret;
 };
 
-//############### PARTIE NOTES ###############
+
 
 export const useGetNotesByMembre = () => {
   const context = useContext(AuthContext);
@@ -927,7 +928,7 @@ export const useDeleteNote = () => {
   return deleteNote;
 };
 
-// ############### PARTIE IMAGES ###############
+
 
 export interface ImageDTO {
   id: number;
@@ -965,8 +966,8 @@ export const useCreateImageByMembre = () => {
     formData.append("file", file);
 
     const headers: Record<string, string> = {};
-    
-    const token = getStoredToken(); 
+
+        const token = getStoredToken(); 
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
@@ -982,8 +983,8 @@ export const useCreateImageByMembre = () => {
       console.error("Détail Spring Boot :", errorText);
       throw new Error("Impossible de créer l'image : " + response.status);
     }
-    
-    return await response.json();
+
+        return await response.json();
   };
 
   return createImageByMembre;

@@ -40,9 +40,7 @@ export default function WidgetPrets({
 }) {
   const [prets, setPrets] = useState<PretDTO[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [etats, setEtats] = useState<string[]>([]);
-
-  // États du formulaire
+  const [etats, setEtats] = useState<string[]>([]);
   const [nomMateriel, setNomMateriel] = useState("");
   const [marqueMateriel, setMarqueMateriel] = useState("");
   const [nomPersonne, setNomPersonne] = useState("");
@@ -116,8 +114,7 @@ export default function WidgetPrets({
     await refreshData();
     setErreur("");
 
-    setIsModalOpen(false);
-    // Reset du form
+    setIsModalOpen(false);
     setNomMateriel("");
     setMarqueMateriel("");
     setNomPersonne("");
@@ -171,11 +168,11 @@ export default function WidgetPrets({
 
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+
       reconnectDelay: 5000,
       onConnect: () => {
-        stompClient.subscribe(frequence, (message) => {
-          // ⚠️ Assure-toi que Spring Boot envoie bien "REFRESH_PRETS" !
+        stompClient.subscribe(frequence, (message) => {
           if (message.body === "REFRESH_PRETS") {
             refreshData();
           }
@@ -186,7 +183,7 @@ export default function WidgetPrets({
 
     const activationTimer = window.setTimeout(() => {
       stompClient.activate();
-    }, 150);
+    }, 400);
 
     return () => {
       window.clearTimeout(activationTimer);

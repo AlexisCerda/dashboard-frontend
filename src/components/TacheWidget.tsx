@@ -22,7 +22,8 @@ export default function WidgetTaches({ groupeId }: WidgetTachesProps) {
     fetchTaches();
 
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+
       
       onConnect: () => {
         

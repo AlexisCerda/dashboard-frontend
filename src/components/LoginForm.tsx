@@ -1,6 +1,7 @@
 import { useState, useContext } from "react";
 import { loginAgent } from "../services/authService";
 import { AuthContext } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -9,6 +10,7 @@ export default function LoginForm() {
   const [erreur, setErreur] = useState("");
 
   const authContext = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -18,7 +20,7 @@ export default function LoginForm() {
       const idUser = resultat.utilisateur?.id ?? resultat.utilisateur?.idUser ?? resultat.utilisateur?.idMembre;
       if(authContext && resultat.token && idUser){
         authContext.login(idUser, resultat.token);
-        window.location.href ="/dashboard";
+        navigate("/dashboard");
       } else {
         console.error("Champ ID introuvable dans la réponse:", resultat.utilisateur);
         setErreur("Erreur de connexion : réponse serveur invalide.");

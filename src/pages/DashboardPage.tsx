@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState, useRef } from "react";
+import { useCallback, useContext, useEffect, useState, useRef, useMemo, memo } from "react";
 import { AuthContext } from "../context/AuthContext";
 import SelectGroupe from "../components/SelectGroupe";
 import { ButtonAdminGroupe } from "../components/ButtonAdminGroupe";
@@ -33,8 +33,8 @@ import WidgetImages from "../components/Widgets/WidgetImage";
 import type { Configuration } from "../types/Configuration";
 
 const ReactGridLayout = WidthProvider(RGL);
+const MemoWidgetImages = memo(WidgetImages);
 
-// Les widgets uniques (un seul par bureau)
 const WIDGETS_SINGLETONS: string[] = [
   "Taches",
   "Notes",
@@ -257,9 +257,7 @@ export default function DashboardPage() {
     [SaveLayoutBD, toggleGridInteractionClass],
   );
 
-  const handleLayoutLiveChange = useCallback((newLayout: any) => {
-    setLayout(newLayout);
-  }, []);
+
 
   const RefreshConfig = async () => {
     if (context?.groupeActifId) {
@@ -279,13 +277,19 @@ export default function DashboardPage() {
     }
   };
 
-  const handleRemoveWidget = (widgetId: string) => {
+  const handleRemoveWidget = useCallback((widgetId: string) => {
     setLayout((prevLayout) => {
       const newLayout = prevLayout.filter((item) => item.i !== widgetId);
       SaveLayoutBD(newLayout);
       return newLayout;
     });
-  };
+  }, [SaveLayoutBD]);
+
+  const widgetTaches = useMemo(() => <WidgetTaches onClose={() => handleRemoveWidget("Taches")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
+  const widgetNotes = useMemo(() => <WidgetNotes onClose={() => handleRemoveWidget("Notes")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
+  const widgetAchats = useMemo(() => <WidgetAchats onClose={() => handleRemoveWidget("Achats")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
+  const widgetPrets = useMemo(() => <WidgetPrets onClose={() => handleRemoveWidget("Prets")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
+  const widgetMouvement = useMemo(() => <WidgetMouvements onClose={() => handleRemoveWidget("Mouvements")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
 
   useEffect(() => {
     RefreshConfig();
@@ -325,7 +329,8 @@ export default function DashboardPage() {
     if (!context?.groupeActifId || context.auth.idUser == null) return;
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+
       reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
@@ -336,7 +341,7 @@ export default function DashboardPage() {
     });
     const activationTimer = window.setTimeout(
       () => stompClient.activate(),
-      150,
+      400,
     );
     return () => {
       window.clearTimeout(activationTimer);
@@ -447,7 +452,7 @@ export default function DashboardPage() {
               )}
             </div>
             {erreur && (
-              <div className="ml-auto px-3 py-2 bg-red-50 text-red-700 rounded-lg border border-red-200 text-xs font-medium">
+              <div className="w-full text-center px-3 py-2 bg-red-50 text-red-700 rounded-lg border border-red-200 text-xs font-medium mt-2">
                 {erreur}
               </div>
             )}
@@ -458,7 +463,6 @@ export default function DashboardPage() {
             layout={layout}
             cols={24}
             rowHeight={60}
-            onLayoutChange={handleLayoutLiveChange}
             onDragStart={() => toggleGridInteractionClass(true)}
             onResizeStart={() => toggleGridInteractionClass(true)}
             onDragStop={(layoutActuel: any) => handleLayoutCommit(layoutActuel)}
@@ -473,43 +477,18 @@ export default function DashboardPage() {
           >
             {layout.map((item) => (
               <div key={item.i}>
-                {item.i === "Taches" && (
-                  <WidgetTaches
-                    onClose={() => handleRemoveWidget("Taches")}
-                    isGuest={isGuest}
-                  />
-                )}
-                {item.i === "Notes" && (
-                  <WidgetNotes
-                    onClose={() => handleRemoveWidget("Notes")}
-                    isGuest={isGuest}
-                  />
-                )}
-                {item.i === "Achats" && (
-                  <WidgetAchats
-                    onClose={() => handleRemoveWidget("Achats")}
-                    isGuest={isGuest}
-                  />
-                )}
-                {item.i === "Prets" && (
-                  <WidgetPrets
-                    onClose={() => handleRemoveWidget("Prets")}
-                    isGuest={isGuest}
-                  />
-                )}
-                {item.i === "Mouvements" && (
-                  <WidgetMouvements
-                    onClose={() => handleRemoveWidget("Mouvements")}
-                    isGuest={isGuest}
-                  />
-                )}
+                {item.i === "Taches" && widgetTaches}
+                {item.i === "Notes" && widgetNotes}
+                {item.i === "Achats" && widgetAchats}
+                {item.i === "Prets" && widgetPrets}
+                {item.i === "Mouvements" && widgetMouvement}
                 {item.i.startsWith("Image-") && (
-                  <WidgetImages
+                  <MemoWidgetImages
                     widgetId={item.i}
                     onClose={() => handleRemoveWidget(item.i)}
                     isGuest={isGuest}
                   />
-                )}{" "}
+                )} 
               </div>
             ))}
           </ReactGridLayout>

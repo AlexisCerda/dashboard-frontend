@@ -76,7 +76,8 @@ export function UpdateGroupePage() {
 
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
           if (message.body === "REFRESH_MEMBRES") {

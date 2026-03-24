@@ -5,3 +5,22 @@
 		@apply bg-slate-50 text-slate-700 antialiased;
 	}
 }
+
+.widget-interacting {
+	user-select: none !important;
+	-webkit-user-select: none !important;
+}
+
+.react-grid-item.react-draggable-dragging,
+.react-grid-item.resizing {
+	transition: none !important;
+	will-change: transform, width, height;
+	z-index: 9999 !important;
+}
+
+.widget-interacting iframe,
+.widget-interacting img,
+.widget-interacting embed,
+.widget-interacting object {
+	pointer-events: none !important;
+}

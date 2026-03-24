@@ -3,7 +3,8 @@ import { AuthContext } from "../context/AuthContext";
 import type { User } from "../pages/UpdateUserPage";
 import type { Configuration } from "../types/Configuration";
 
-const API_URL = "http://localhost:8080/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+
 
 export const ROLE_INVITE = 0;
 export const ROLE_ADMIN = 1;
@@ -53,8 +54,8 @@ export const useGetCurrentGroupe = () => {
     const data = await response.json();
     return data;
   };
-  
-  return getCurrentGroupe;
+
+    return getCurrentGroupe;
 };
 
 export const useGetGroupesUtilisateur = () => {

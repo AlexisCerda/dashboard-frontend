@@ -34,7 +34,7 @@ export default function SelectGroupe() {
           try {
             await patchCurrentGroupe(premierGroupeId);
           } catch {
-            // Le backend peut refuser ponctuellement: on garde l'état local pour éviter de bloquer l'UI.
+
           }
         }
       } catch (error) {

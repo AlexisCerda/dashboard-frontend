@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { useDeleteUser, useGetUser, useUpdatePwdUser, useUpdateUser } from "../services/membreService";
-import { TrashIcon } from "lucide-react";
+import { TrashIcon, Eye, EyeOff } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmeModalProps";
 
@@ -15,20 +15,21 @@ export default function UpdateUserPage() {
   const [erreur, setErreur] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
   const [message, setMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const UpdateUser = useUpdateUser();
-  const GetUser = useGetUser();
-  const UpdatePwdUser = useUpdatePwdUser();
-  const DeleteUser = useDeleteUser();
+  const updateUserAction = useUpdateUser();
+  const getUserAction = useGetUser();
+  const updatePwdAction = useUpdatePwdUser();
+  const deleteUserAction = useDeleteUser();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const resultatUser = await GetUser();
+        const resultatUser = await getUserAction();
         setNom(resultatUser.nom);
         setEmail(resultatUser.email);
         setPrenom(resultatUser.prenom);
@@ -41,7 +42,7 @@ export default function UpdateUserPage() {
 
   async function handleLeave(userId: string) {
     try {
-      await DeleteUser(userId);
+      await deleteUserAction(userId);
       context?.logout();
     } catch (error) {
       console.error("Erreur de suppression", error);
@@ -56,7 +57,7 @@ export default function UpdateUserPage() {
 
       if(password){
         try {
-          const resultat = await UpdatePwdUser(password);
+          await updatePwdAction(password);
         } catch (error) {
           setErreur("Mot de passe invalide");
           return;
@@ -64,7 +65,7 @@ export default function UpdateUserPage() {
       }
 
       try {
-        const resultat = await UpdateUser({ nom, prenom, email });
+        const resultat = await updateUserAction({ nom, prenom, email });
         if (resultat.token && context?.auth.idUser) {
           context.login(context.auth.idUser, resultat.token);
         }
@@ -146,15 +147,23 @@ export default function UpdateUserPage() {
             >
               Mot de passe
             </label>
-            <input
-              id="password"
-              type={"text"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none transition-all"
-              placeholder="••••••••"
-            />
-
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none transition-all pr-10"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
           <button
             type="submit"

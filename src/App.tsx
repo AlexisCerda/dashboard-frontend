@@ -38,9 +38,12 @@ function App() {
     };
     fetchUser();
   }, [context?.auth.idUser]);
+  const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
+
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-slate-50 text-slate-700">
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
+
         <NavBar />
         <div className="flex-1 overflow-y-auto">
         <Routes>

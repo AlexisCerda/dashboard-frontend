@@ -1,7 +1,7 @@
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useCreateUser } from "../services/membreService";
 import { useNavigate } from "react-router-dom";
-
 export type User = {
   nom: string;
   prenom: string;
@@ -12,6 +12,7 @@ export default function SigninPage() {
   const [erreur, setErreur] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
 
@@ -100,16 +101,24 @@ export default function SigninPage() {
             >
               Mot de passe
             </label>
-            <input
-              id="password"
-              type={"text"}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none transition-all"
-              placeholder="••••••••"
-            />
-
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none transition-all pr-10"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
           <button
             type="submit"

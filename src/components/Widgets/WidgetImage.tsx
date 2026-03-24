@@ -24,7 +24,8 @@ import {
 import EditableField from "../EditableField";
 
 const MAX_FILE_SIZE_MB = 5;
-const SERVER_URL = "http://localhost:8080/";
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:8080/";
+
 
 export default function WidgetImages({
   widgetId, // 🚨 NOUVEAU : Identifiant unique du widget
@@ -43,10 +44,10 @@ export default function WidgetImages({
     maxImages?: number;
   } | null>(null);
   const [erreur, setErreur] = useState("");
+  const [refreshKey, setRefreshKey] = useState(Date.now());
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  // 🚀 ÉTAT POUR L'IMAGE EN PLEIN ÉCRAN
   const [selectedImageId, setSelectedImageId] = useState<number | null>(null);
 
   const context = useContext(AuthContext);
@@ -56,7 +57,6 @@ export default function WidgetImages({
   const deleteImage = useDeleteImage();
   const getConfig = useGetConfig();
 
-  // Au chargement du widget, on regarde s'il avait une image mémorisée
   useEffect(() => {
     if (widgetId) {
       const savedImageId = localStorage.getItem(`widget_image_${widgetId}`);
@@ -117,7 +117,7 @@ export default function WidgetImages({
 
   const handleDeleteImage = async (id: number) => {
     await deleteImage(id);
-    if (selectedImageId === id) handleRemoveSelection(); // On enlève le plein écran si on supprime l'image
+    if (selectedImageId === id) handleRemoveSelection(); 
     refreshData();
   };
 
@@ -142,7 +142,8 @@ export default function WidgetImages({
 
     const frequence = `/topic/membre/${context.auth.idUser}`;
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+
       reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
@@ -154,7 +155,7 @@ export default function WidgetImages({
 
     const activationTimer = window.setTimeout(
       () => stompClient.activate(),
-      150,
+      400,
     );
     return () => {
       window.clearTimeout(activationTimer);
@@ -167,6 +168,7 @@ export default function WidgetImages({
     try {
       const resultat = await getImagesByMembre();
       setImages(resultat || []);
+      setRefreshKey(Date.now());
     } catch (error) {
       console.error("Erreur", error);
     }
@@ -175,9 +177,10 @@ export default function WidgetImages({
   if (selectedImageId) {
     const img = images.find((i) => i.id === selectedImageId);
     if (img) {
-      const imageSrc = img.path?.startsWith("http")
+      const imageSrcBase = img.path?.startsWith("http")
         ? img.path
         : `${SERVER_URL}${img.path}`;
+      const imageSrc = `${imageSrcBase}?t=${refreshKey}`;
       return (
         <WidgetFrame
           title={img.nom || "Image"}
@@ -193,7 +196,6 @@ export default function WidgetImages({
             </button>
           }
         >
-          {/* object-cover permet de remplir tout le widget. Si l'image est rognée et que tu préfères voir l'image entière avec des bandes, remplace object-cover par object-contain */}
           <div className="w-full h-full bg-slate-100 flex items-center justify-center overflow-hidden">
             <img
               src={imageSrc}
@@ -278,9 +280,10 @@ export default function WidgetImages({
           ) : (
             <div className="flex flex-row gap-3 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-indigo-200 scrollbar-track-transparent">
               {filteredImages.map((img) => {
-                const imageSrc = img.path?.startsWith("http")
+                const imageSrcBase = img.path?.startsWith("http")
                   ? img.path
                   : `${SERVER_URL}${img.path}`;
+                const imageSrc = `${imageSrcBase}?t=${refreshKey}`;
 
                 return (
                   <div

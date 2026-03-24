@@ -205,7 +205,8 @@ export default function WidgetTaches({
 
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+
       reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
@@ -219,7 +220,7 @@ export default function WidgetTaches({
 
     const activationTimer = window.setTimeout(() => {
       stompClient.activate();
-    }, 150);
+    }, 400);
 
     return () => {
       window.clearTimeout(activationTimer);
@@ -383,8 +384,8 @@ export default function WidgetTaches({
               key={tache.id}
               className={`${isCompactLayout ? "flex flex-col" : "grid grid-cols-[minmax(0,1fr)_9rem] items-start"} gap-3 p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 text-sm`}
             >
-              <div className="flex flex-col flex-1 min-w-0 gap-1">
-                <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} font-semibold text-slate-800 flex items-center gap-1 overflow-hidden`}>
+              <div className="flex flex-col flex-1 min-w-0 gap-1 overflow-hidden">
+                <div className={`flex flex-wrap font-semibold text-slate-800 items-center gap-1`}>
                   <EditableField
                     value={tache.nom}
                     onSave={(newVal) => (
@@ -393,7 +394,7 @@ export default function WidgetTaches({
                     )}
                     isGuest={isGuest || showMyTasksOnly}
                     placeholder="Tâche"
-                    noWrap={!isCompactLayout}
+                    noWrap={false}
                   />
                   <span className="text-gray-300">|</span>
                   <EditableField
@@ -404,7 +405,7 @@ export default function WidgetTaches({
                       tache.description = newVal;
                       handleUpdateField(tache);
                     }}
-                    noWrap={!isCompactLayout}
+                    noWrap={false}
                   />
                 </div>
 

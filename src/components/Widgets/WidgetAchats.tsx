@@ -162,7 +162,8 @@ export default function WidgetAchats({
 
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+
       reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {
@@ -176,7 +177,7 @@ export default function WidgetAchats({
 
     const activationTimer = window.setTimeout(() => {
       stompClient.activate();
-    }, 150);
+    }, 400);
 
     return () => {
       window.clearTimeout(activationTimer);
