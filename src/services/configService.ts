@@ -114,6 +114,7 @@ export const useUpdateConfiguration = ()=>{
         achats : configuration.achats,
         prets : configuration.prets,
         mouvements : configuration.mouvements,
+        equipe : configuration.equipe,
         images: configuration.images,
         nom : configuration.nom
       }),

@@ -14,7 +14,7 @@ import { useGetConfig } from "../../services/configService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
-import { CircleX, ChevronUp, ChevronDown, CirclePlus } from "lucide-react"; 
+import { CircleX, ChevronUp, ChevronDown, CirclePlus, LogIn, LogOut } from "lucide-react"; 
 import EditableField from "../EditableField";
 
 const COMPACT_LAYOUT_BREAKPOINT = 360;
@@ -283,9 +283,9 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
                   />
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
-                  <div className="flex items-center gap-1 text-green-600">
-                    <span title="Arrivée">▶</span>
+                <div className="flex flex-wrap items-center gap-4 text-xs mt-2 font-medium">
+                  <div className="flex items-center gap-2 px-2 py-1 bg-green-50 text-green-700 rounded-md border border-green-100 shadow-sm" title="Arrivée">
+                    <LogIn size={14} className="shrink-0 text-green-500" />
                     <EditableField
                       value={m.dateArrivee} 
                       type="date"
@@ -293,8 +293,8 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
                       onSave={(newVal) => { m.dateArrivee = formatDate(newVal); handleUpdateField(m); }} 
                     />
                   </div>
-                  <div className="flex items-center gap-1 text-red-500">
-                    <span title="Départ">◀</span>
+                  <div className="flex items-center gap-2 px-2 py-1 bg-red-50 text-red-700 rounded-md border border-red-100 shadow-sm" title="Départ">
+                    <LogOut size={14} className="shrink-0 text-red-400" />
                     <EditableField
                       value={m.dateDepart} 
                       type="date"

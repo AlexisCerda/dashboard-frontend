@@ -448,6 +448,17 @@ export default function TutorialPage() {
             />
 
             <WidgetCard
+              icon={<Users className="w-5 h-5 text-indigo-600" />}
+              title="Équipe"
+              color="border-indigo-200 bg-indigo-50/50"
+              description="Visualisez les membres de votre groupe classés par rôle. Un moyen rapide de voir qui compose l'équipe actuelle."
+              tips={[
+                "Les membres sont triés par rôle : Administrateurs, Membres et Invités.",
+                "Chaque membre a son initiale pour une identification rapide.",
+              ]}
+            />
+
+            <WidgetCard
               icon={<Image className="w-5 h-5 text-pink-600" />}
               title="Image"
               color="border-pink-200 bg-pink-50/50"

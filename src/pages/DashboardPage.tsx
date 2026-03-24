@@ -31,6 +31,7 @@ import WidgetAchats from "../components/Widgets/WidgetAchats";
 import WidgetPrets from "../components/Widgets/WidgetPrets";
 import WidgetMouvements from "../components/Widgets/WidgetMouvement";
 import WidgetImages from "../components/Widgets/WidgetImage";
+import WidgetEquipe from "../components/Widgets/WidgetEquipe";
 import type { Configuration } from "../types/Configuration";
 
 const ReactGridLayout = WidthProvider(RGL);
@@ -42,6 +43,7 @@ const WIDGETS_SINGLETONS: string[] = [
   "Achats",
   "Prets",
   "Mouvements",
+  "Equipe",
 ];
 
 export default function DashboardPage() {
@@ -104,6 +106,7 @@ export default function DashboardPage() {
           parseWidget("Achats", currentConfig.achats);
           parseWidget("Prets", currentConfig.prets);
           parseWidget("Mouvements", currentConfig.mouvements);
+          parseWidget("Equipe", currentConfig.equipe);
 
           if (
             currentConfig.images &&
@@ -167,6 +170,9 @@ export default function DashboardPage() {
               break;
             case "Mouvements":
               updatedConfig.mouvements = layoutStr as any;
+              break;
+            case "Equipe":
+              updatedConfig.equipe = layoutStr as any;
               break;
           }
         });
@@ -291,6 +297,7 @@ export default function DashboardPage() {
   const widgetAchats = useMemo(() => <WidgetAchats onClose={() => handleRemoveWidget("Achats")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
   const widgetPrets = useMemo(() => <WidgetPrets onClose={() => handleRemoveWidget("Prets")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
   const widgetMouvement = useMemo(() => <WidgetMouvements onClose={() => handleRemoveWidget("Mouvements")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
+  const widgetEquipe = useMemo(() => <WidgetEquipe onClose={() => handleRemoveWidget("Equipe")} />, [handleRemoveWidget]);
 
   useEffect(() => {
     RefreshConfig();
@@ -483,6 +490,7 @@ export default function DashboardPage() {
                 {item.i === "Achats" && widgetAchats}
                 {item.i === "Prets" && widgetPrets}
                 {item.i === "Mouvements" && widgetMouvement}
+                {item.i === "Equipe" && widgetEquipe}
                 {item.i.startsWith("Image-") && (
                   <MemoWidgetImages
                     widgetId={item.i}

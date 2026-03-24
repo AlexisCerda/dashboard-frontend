@@ -7,6 +7,7 @@ export type Configuration = {
   achats: string;
   prets: string;
   mouvements: string;
+  equipe?: string;
   images?: string;
   nom: string;
   version?: number;
