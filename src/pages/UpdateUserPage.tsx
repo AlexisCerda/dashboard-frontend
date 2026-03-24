@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { useDeleteUser, useGetUser, useUpdatePwdUser, useUpdateUser } from "../services/membreService";
+import { useDeleteUser, useGetUser, useUpdatePwdUser, useUpdateUser } from "../services/userService";
 import { TrashIcon, Eye, EyeOff } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmeModalProps";

@@ -13,10 +13,10 @@ import {
   useGetTacheMembre,
   useUpdateEtatTache,
   useUpdateTache,
-  type MembreDTO,
   type TacheDTO,
-} from "../../services/WidgetService";
-import { useGetConfig } from "../../services/membreService";
+} from "../../services/tacheService";
+import { type MembreDTO } from "../../services/userService";
+import { useGetConfig } from "../../services/configService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
@@ -28,7 +28,7 @@ import {
   ChevronDown,
   CirclePlus,
 } from "lucide-react";
-import { useGetUserByGroupe } from "../../services/membreService";
+import { useGetUserByGroupe } from "../../services/groupeService";
 import EditableField from "../EditableField";
 
 const COMPACT_LAYOUT_BREAKPOINT = 420;

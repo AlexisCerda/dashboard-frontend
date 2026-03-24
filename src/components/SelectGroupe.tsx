@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { useGetGroupesUtilisateur, usePatchCurrentGroupe } from "../services/membreService";
+import { useGetGroupesUtilisateur, usePatchCurrentGroupe } from "../services/groupeService";
 
 export default function SelectGroupe() {
   const context = useContext(AuthContext);

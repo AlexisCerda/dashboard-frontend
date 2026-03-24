@@ -9,8 +9,8 @@ import {
   useGetPretGroupe,
   useUpdateEtatPret,
   useUpdatePret,
-} from "../../services/WidgetService";
-import { useGetConfig } from "../../services/membreService";
+} from "../../services/pretService";
+import { useGetConfig } from "../../services/configService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";

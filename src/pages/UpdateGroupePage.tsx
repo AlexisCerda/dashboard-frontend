@@ -1,17 +1,15 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import {
-  ROLE_ADMIN,
-  ROLE_MEMBRE,
   useAddUserByGroupe,
   useGetUsersByRoleGroupe,
-  useGetAllUser,
   useGetUserByGroupe,
   useRemoveUserByGroupe,
   useUpdateMembreRole,
   useUpdateMembreToAdminUrgent,
-  ROLE_INVITE,
-} from "../services/membreService";
+} from "../services/groupeService";
+import { useGetAllUser } from "../services/userService";
+import { ROLE_ADMIN, ROLE_MEMBRE, ROLE_INVITE } from "../services/apiConfig";
 import type { User } from "../types/User";
 import {
   ChevronDown,

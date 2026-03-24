@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
-import { ROLE_ADMIN, useGetUsersByRoleGroupe } from "../services/membreService";
+import { useGetUsersByRoleGroupe } from "../services/groupeService";
+import { ROLE_ADMIN } from "../services/apiConfig";
 import { AuthContext } from "../context/AuthContext";
 import type { User } from "../types/User";
 import { Link } from "react-router-dom";

@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import {
-  useDeleteGroupe,
   useDeleteUser,
-  useGetAllGroupes,
   useGetAllUser,
-  useGetConfig,
   useGetDateLastCoByUser,
+} from "../services/userService";
+import {
+  useDeleteGroupe,
+  useGetAllGroupes,
   useGetGroupesByUser,
+} from "../services/groupeService";
+import {
+  useGetConfig,
   useUpdateConfig,
-} from "../services/membreService";
+} from "../services/configService";
 import type { User } from "../types/User";
 import { CircleX } from "lucide-react";
 

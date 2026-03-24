@@ -13,7 +13,8 @@ import AdminRoute from "./components/AdminRoute";
 import TutorialPage from "./pages/TutorialPage";
 import { AuthContext } from "./context/AuthContext";
 import { useContext, useEffect, useState } from "react";
-import { useGetConfig, useGetUser } from "./services/membreService";
+import { useGetConfig } from "./services/configService";
+import { useGetUser } from "./services/userService";
 
 function App() {
   const context = useContext(AuthContext);

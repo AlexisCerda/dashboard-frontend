@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
-import { useCreateGroupe, useGetConfig, useGetGroupesUtilisateur } from "../services/membreService";
+import { useCreateGroupe, useGetGroupesUtilisateur } from "../services/groupeService";
+import { useGetConfig } from "../services/configService";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 

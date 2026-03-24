@@ -9,8 +9,8 @@ import {
   useGetMouvementGroupe, 
   useUpdateEtatMouvement, 
   useUpdateMouvement, 
-} from "../../services/WidgetService";
-import { useGetConfig } from "../../services/membreService";
+} from "../../services/mouvementService";
+import { useGetConfig } from "../../services/configService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";

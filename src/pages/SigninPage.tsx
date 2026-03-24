@@ -1,6 +1,6 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { useCreateUser } from "../services/membreService";
+import { useCreateUser } from "../services/userService";
 import { useNavigate } from "react-router-dom";
 export type User = {
   nom: string;

@@ -1,0 +1,243 @@
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
+import { API_URL, getAuthHeaders } from "./apiConfig";
+
+export interface TacheDTO {
+  id: number;
+  nom: string;
+  description: string;
+  dateDebut: string | null;
+  dateLimite: string | null;
+  etat: string;
+  membresIds?: number[];
+}
+
+export interface EtatTacheDTO {
+  etat: string;
+}
+
+export interface AddMembreTache {
+  idMembre: number;
+}
+
+export const useGetTacheGroupe = () => {
+  const context = useContext(AuthContext);
+
+  const getTacheGroupe = async () => {
+    if (!context?.auth.idUser) {
+      return null;
+    }
+
+    const response = await fetch(
+      `${API_URL}/groupes/${context?.groupeActifId}/taches`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      },
+    );
+
+    if (response.status === 401 || response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error("Impossible de recuperer les taches du groupe");
+    }
+
+    const data = await response.json();
+    return data;
+  };
+
+  return getTacheGroupe;
+};
+
+export const useGetTacheMembre = () => {
+  const context = useContext(AuthContext);
+
+  const getTacheMembre = async () => {
+    if (!context?.auth.idUser) {
+      return null;
+    }
+
+    const response = await fetch(
+      `${API_URL}/membres/${context?.auth.idUser}/taches`,
+      {
+        method: "GET",
+        headers: getAuthHeaders(),
+      },
+    );
+
+    if (response.status === 401 || response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error("Impossible de recuperer les taches du membre");
+    }
+
+    const data = await response.json();
+    return data;
+  };
+
+  return getTacheMembre;
+};
+
+export const useAddMembreToTache = () => {
+  const addMembreToTache = async (idTache: number, idMembre: number) => {
+    const response = await fetch(`${API_URL}/taches/${idTache}/membres`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ idMembre }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Impossible d'ajouter le membre à la tache");
+    }
+
+    return await response.json();
+  };
+
+  return addMembreToTache;
+};
+
+export const useDeleteMembreFromTache = () => {
+  const deleteMembreFromTache = async (idTache: number, idMembre: number) => {
+    const response = await fetch(
+      `${API_URL}/taches/${idTache}/membres/${idMembre}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("Impossible de supprimer le membre de la tache");
+    }
+
+    return await response.json();
+  };
+
+  return deleteMembreFromTache;
+};
+
+export const useUpdateTache = () => {
+  const updateTache = async (tache: TacheDTO) => {
+    const response = await fetch(`${API_URL}/taches`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(tache),
+    });
+
+    if (!response.ok) {
+      throw new Error("Impossible de mettre à jour la tache");
+    }
+
+    return await response.json();
+  };
+
+  return updateTache;
+};
+
+export const useDeleteTache = () => {
+  const deleteTache = async (id: number) => {
+    const response = await fetch(`${API_URL}/taches/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Impossible de supprimer la tache");
+    }
+
+    return await response.text();
+  };
+
+  return deleteTache;
+};
+
+export const useAddTache = () => {
+  const context = useContext(AuthContext);
+  const addTache = async (tache: TacheDTO) => {
+    const response = await fetch(
+      `${API_URL}/groupes/${context?.groupeActifId}/taches`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(tache),
+      },
+    );
+
+    if (!response.ok) {
+      const errorMsg = await response.text();
+      console.error("Erreur serveur lors de l'ajout de la tache:", errorMsg);
+      throw new Error(`Impossible d'ajouter la tache: ${errorMsg}`);
+    }
+
+    return await response.json();
+  };
+
+  return addTache;
+};
+
+export const useUpdateEtatTache = () => {
+  const updateEtatTache = async (id: number, etat: string) => {
+    const response = await fetch(`${API_URL}/taches/${id}/etat`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ etat }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Impossible de mettre à jour l'etat de la tache");
+    }
+
+    return await response.json();
+  };
+
+  return updateEtatTache;
+};
+
+export const useGetEtatTache = () => {
+  const getEtatTache = async () => {
+    const response = await fetch(`${API_URL}/taches/etats`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error("Impossible de recuperer les etats des taches");
+    }
+
+    return await response.json();
+  };
+
+  return getEtatTache;
+};
+
+export const useGetMembreByTache = () => {
+  const context = useContext(AuthContext);
+
+  const getMembreByTache = async (idTache: number) => {
+    if (!context?.auth.idUser) {
+      return null;
+    }
+
+    const response = await fetch(`${API_URL}/taches/${idTache}/membres`, {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    if (response.status === 401 || response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error("Impossible de recuperer les membres de la tache");
+    }
+
+    const data = await response.json();
+    return data;
+  };
+
+  return getMembreByTache;
+};

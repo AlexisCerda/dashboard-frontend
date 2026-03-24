@@ -7,8 +7,8 @@ import {
   useGetImagesByMembre,
   useUpdateImageByMembre,
   type ImageDTO,
-} from "../../services/WidgetService";
-import { useGetConfig } from "../../services/membreService";
+} from "../../services/imageService";
+import { useGetConfig } from "../../services/configService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";

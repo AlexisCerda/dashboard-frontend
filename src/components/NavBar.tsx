@@ -2,7 +2,8 @@ import { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { UserCog, UserStar } from "lucide-react";
-import { useGetConfig, useGetUser } from "../services/membreService";
+import { useGetConfig } from "../services/configService";
+import { useGetUser } from "../services/userService";
 
 type UserDTO = {
   id: number;

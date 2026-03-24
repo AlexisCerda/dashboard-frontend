@@ -7,16 +7,17 @@ import SockJS from "sockjs-client";
 import { LogOut, SquarePlus, X, Plus } from "lucide-react";
 import ConfirmModal from "../components/ConfirmeModalProps";
 import {
-  ROLE_ADMIN,
-  ROLE_INVITE,
   useCreateConfiguration,
   useDeleteConfiguration,
   useGetConfig,
   useGetConfiguration,
+  useUpdateConfiguration,
+} from "../services/configService";
+import {
   useGetUsersByRoleGroupe,
   useRemoveUserByGroupe,
-  useUpdateConfiguration,
-} from "../services/membreService";
+} from "../services/groupeService";
+import { ROLE_ADMIN, ROLE_INVITE } from "../services/apiConfig";
 import type { User } from "../types/User";
 import { Link } from "react-router-dom";
 
