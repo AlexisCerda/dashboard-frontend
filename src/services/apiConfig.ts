@@ -9,7 +9,6 @@ export const getStoredToken = (): string | null => {
   if (!token || token === "null" || token === "undefined") {
     return null;
   }
-
   return token;
 };
 
@@ -26,4 +25,26 @@ export const getAuthHeaders = (isFormData: boolean = false): Record<string, stri
   }
 
   return headers;
+};
+
+export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+  const url = `${API_URL}${endpoint}`;
+
+  const isFormData = options.body instanceof FormData;
+  const headers = {
+    ...getAuthHeaders(isFormData),
+    ...(options.headers || {})
+  };
+
+  const response = await fetch(url, { ...options, headers });
+
+  if ((response.status === 401 || response.status === 403) && !endpoint.includes("/auth/")) {
+    console.warn("Token expiré ou invalide. Déconnexion automatique.");
+    
+    localStorage.removeItem("sidsic_token");
+    window.location.href = "/login"; 
+    throw new Error("Session expirée, redirection en cours...");
+  }
+
+  return response;
 };

@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { API_URL, getAuthHeaders, getStoredToken } from "./apiConfig";
+import { apiFetch } from "./apiConfig";
 
 export interface ImageDTO {
   id: number;
@@ -13,9 +13,8 @@ export const useGetImagesByMembre = () => {
   const getImagesByMembre = async (idMembre?: number) => {
     const membreId = idMembre ?? context?.auth.idUser;
     if (!membreId) return [];
-    const response = await fetch(`${API_URL}/membres/${membreId}/images`, {
+    const response = await apiFetch(`/membres/${membreId}/images`, {
       method: "GET",
-      headers: getAuthHeaders(),
     });
     if (response.status === 404) {
       return [];
@@ -37,16 +36,8 @@ export const useCreateImageByMembre = () => {
     const formData = new FormData();
     formData.append("file", file);
 
-    const headers: Record<string, string> = {};
-
-    const token = getStoredToken(); 
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${API_URL}/membres/${membreId}/images`, {
+    const response = await apiFetch(`/membres/${membreId}/images`, {
       method: "POST",
-      headers: headers,
       body: formData,
     });
 
@@ -67,11 +58,10 @@ export const useUpdateImageByMembre = () => {
   const updateImageByMembre = async (image: ImageDTO, idMembre?: number) => {
     const membreId = idMembre ?? context?.auth.idUser;
     if (!membreId) throw new Error("Utilisateur non connecté");
-    const response = await fetch(
-      `${API_URL}/membres/${membreId}/images/${image.id}`,
+    const response = await apiFetch(
+      `/membres/${membreId}/images/${image.id}`,
       {
         method: "PUT",
-        headers: getAuthHeaders(),
         body: JSON.stringify(image),
       },
     );
@@ -83,9 +73,8 @@ export const useUpdateImageByMembre = () => {
 
 export const useDeleteImage = () => {
   const deleteImage = async (idImage: number) => {
-    const response = await fetch(`${API_URL}/images/${idImage}`, {
+    const response = await apiFetch(`/images/${idImage}`, {
       method: "DELETE",
-      headers: getAuthHeaders(),
     });
     if (!response.ok) throw new Error("Impossible de supprimer l'image");
     return await response.text();

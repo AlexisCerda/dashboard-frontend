@@ -1,13 +1,9 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
-
+import { apiFetch } from "./apiConfig";
 
 export const loginAgent = async (email: string, motDePasse: string) => {
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await apiFetch("/auth/login", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         email: email,
         motDePasse: motDePasse

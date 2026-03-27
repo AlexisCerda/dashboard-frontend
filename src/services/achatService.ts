@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { API_URL, getAuthHeaders } from "./apiConfig";
+import { apiFetch } from "./apiConfig";
 
 export interface AchatDTO {
   id: number;
@@ -25,11 +25,10 @@ export const useGetAchatGroupe = () => {
       return null;
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/achats`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/achats`,
       {
         method: "GET",
-        headers: getAuthHeaders(),
       },
     );
 
@@ -50,9 +49,8 @@ export const useGetAchatGroupe = () => {
 
 export const useUpdateEtatAchat = () => {
   const updateEtatAchat = async (id: number, etat: string) => {
-    const response = await fetch(`${API_URL}/achats/${id}/etat`, {
+    const response = await apiFetch(`/achats/${id}/etat`, {
       method: "PATCH",
-      headers: getAuthHeaders(),
       body: JSON.stringify({ etat }),
     });
 
@@ -74,11 +72,10 @@ export const useUpdateAchat = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/achats/${achat.id}`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/achats/${achat.id}`,
       {
         method: "PUT",
-        headers: getAuthHeaders(),
         body: JSON.stringify(achat),
       },
     );
@@ -101,11 +98,10 @@ export const useCreateAchat = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/achats`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/achats`,
       {
         method: "POST",
-        headers: getAuthHeaders(),
         body: JSON.stringify(achat),
       },
     );
@@ -128,11 +124,10 @@ export const useDeleteAchat = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/achats/${idAchat}`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/achats/${idAchat}`,
       {
         method: "DELETE",
-        headers: getAuthHeaders(),
       },
     );
 
@@ -148,9 +143,8 @@ export const useDeleteAchat = () => {
 
 export const useGetEtatAchat = () => {
   const getEtatAchat = async (idAchat: number) => {
-    const response = await fetch(`${API_URL}/achats/${idAchat}/etat`, {
+    const response = await apiFetch(`/achats/${idAchat}/etat`, {
       method: "GET",
-      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -165,9 +159,8 @@ export const useGetEtatAchat = () => {
 
 export const useGetAllEtatsAchat = () => {
   const getAllEtatsAchat = async () => {
-    const response = await fetch(`${API_URL}/achats/etats`, {
+    const response = await apiFetch(`/achats/etats`, {
       method: "GET",
-      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {

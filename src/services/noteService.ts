@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { API_URL, getAuthHeaders } from "./apiConfig";
+import { apiFetch } from "./apiConfig";
 
 export interface NoteDTO {
   id: number;
@@ -15,11 +15,10 @@ export const useGetNotesByMembre = () => {
       return null;
     }
 
-    const response = await fetch(
-      `${API_URL}/membres/${context.auth.idUser}/notes`,
+    const response = await apiFetch(
+      `/membres/${context.auth.idUser}/notes`,
       {
         method: "GET",
-        headers: getAuthHeaders(),
       },
     );
 
@@ -46,11 +45,10 @@ export const useUpdateNoteByMembre = () => {
       throw new Error("Utilisateur non connecté");
     }
 
-    const response = await fetch(
-      `${API_URL}/membres/${context.auth.idUser}/notes/${note.id}`,
+    const response = await apiFetch(
+      `/membres/${context.auth.idUser}/notes/${note.id}`,
       {
         method: "PUT",
-        headers: getAuthHeaders(),
         body: JSON.stringify(note),
       },
     );
@@ -73,11 +71,10 @@ export const useCreateNoteByMembre = () => {
       throw new Error("Utilisateur non connecté");
     }
 
-    const response = await fetch(
-      `${API_URL}/membres/${context.auth.idUser}/notes`,
+    const response = await apiFetch(
+      `/membres/${context.auth.idUser}/notes`,
       {
         method: "POST",
-        headers: getAuthHeaders(),
         body: JSON.stringify(note),
       },
     );
@@ -95,9 +92,8 @@ export const useCreateNoteByMembre = () => {
 
 export const useDeleteNote = () => {
   const deleteNote = async (idNote: number) => {
-    const response = await fetch(`${API_URL}/notes/${idNote}`, {
+    const response = await apiFetch(`/notes/${idNote}`, {
       method: "DELETE",
-      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {

@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { API_URL, getAuthHeaders, ROLE_INVITE, ROLE_ADMIN, ROLE_MEMBRE } from "./apiConfig";
+import { apiFetch, ROLE_INVITE, ROLE_ADMIN, ROLE_MEMBRE } from "./apiConfig";
 
 export const useGetCurrentGroupe = () => {
   const context = useContext(AuthContext);
@@ -10,9 +10,8 @@ export const useGetCurrentGroupe = () => {
       return null;
     }
 
-    const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}/groupe-actuel`, {
+    const response = await apiFetch(`/membres/${context?.auth.idUser}/groupe-actuel`, {
       method: "GET",
-      headers: getAuthHeaders(),
     });
 
     if (response.status === 401 || response.status === 404) {
@@ -35,9 +34,8 @@ export const useGetGroupesUtilisateur = () => {
 
   const getGroupesUtilisateur = async () => {
     try {
-      const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}/groupes`, {
+      const response = await apiFetch(`/membres/${context?.auth.idUser}/groupes`, {
         method: "GET",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -60,9 +58,8 @@ export const useGetGroupesByUser = () => {
 
   const getGroupesUtilisateur = async (idUser : number ) => {
     try {
-      const response = await fetch(`${API_URL}/membres/${idUser}/groupes`, {
+      const response = await apiFetch(`/membres/${idUser}/groupes`, {
         method: "GET",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -86,9 +83,8 @@ export const usePatchCurrentGroupe = () => {
 
   const patchCurrentGroupe = async (groupeId: number) => {
     try {
-      const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}/groupe-actuel/${groupeId}`, {
+      const response = await apiFetch(`/membres/${context?.auth.idUser}/groupe-actuel/${groupeId}`, {
         method: "PATCH",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -110,9 +106,8 @@ export const usePatchCurrentGroupe = () => {
 export const useGetUsersByRoleGroupe = () => {
   const GetUsersByRoleGroupe = async (idGroupe: number, role: number) => {
     try {
-      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/role/${role}`, {
+      const response = await apiFetch(`/groupes/${idGroupe}/membres/role/${role}`, {
         method: "GET",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -134,9 +129,8 @@ export const useGetUsersByRoleGroupe = () => {
 export const useGetUserByGroupe = () => {
   const GetUserByGroupe = async (idGroupe : number) => {
     try {
-      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres`, {
+      const response = await apiFetch(`/groupes/${idGroupe}/membres`, {
         method: "GET",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -158,9 +152,8 @@ export const useGetUserByGroupe = () => {
 export const useAddUserByGroupe = ()=>{
   const AddUser = async (idGroupe : string, idMembre: string, idMembreActuel: string) => {
     try {
-      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/added-by/${idMembreActuel}`, {
+      const response = await apiFetch(`/groupes/${idGroupe}/membres/${idMembre}/added-by/${idMembreActuel}`, {
         method: "POST",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -193,9 +186,8 @@ export const useUpdateMembreRole = ()=>{
     }
 
     try {
-      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/role/${role}/by/${idMembreActuel}`, {
+      const response = await apiFetch(`/groupes/${idGroupe}/membres/${idMembre}/role/${role}/by/${idMembreActuel}`, {
         method: "PATCH",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -219,9 +211,8 @@ export const useUpdateMembreRole = ()=>{
 export const useRemoveUserByGroupe = ()=>{
   const UserAdmin = async (idGroupe : string, idMembre: string) => {
     try {
-      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}`, {
+      const response = await apiFetch(`/groupes/${idGroupe}/membres/${idMembre}`, {
         method: "DELETE",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -242,9 +233,8 @@ export const useRemoveUserByGroupe = ()=>{
 export const useUpdateMembreToAdminUrgent = ()=>{
   const UserAdmin = async (idGroupe : string, idMembre: string) => {
     try {
-      const response = await fetch(`${API_URL}/groupes/${idGroupe}/membres/${idMembre}/role/${ROLE_ADMIN}/urgent`, {
+      const response = await apiFetch(`/groupes/${idGroupe}/membres/${idMembre}/role/${ROLE_ADMIN}/urgent`, {
         method: "PATCH",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -266,9 +256,8 @@ export const useUpdateMembreToAdminUrgent = ()=>{
 export const useCreateGroupe = ()=>{
   const CreateGroupe = async (idUser : number, nom : string) => {
     try {
-      const response = await fetch(`${API_URL}/membres/${idUser}/groupes`, {
+      const response = await apiFetch(`/membres/${idUser}/groupes`, {
         method: "POST",
-        headers: getAuthHeaders(),
         body: JSON.stringify({
         id: 0,
         nom: nom,
@@ -296,9 +285,8 @@ export const useGetAllGroupes = () => {
 
   const GetAllGroupes = async () => {
     try {
-      const response = await fetch(`${API_URL}/groupes`, {
+      const response = await apiFetch(`/groupes`, {
         method: "GET",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -320,9 +308,8 @@ export const useGetAllGroupes = () => {
 export const useDeleteGroupe = ()=>{
   const DeleteGroupe = async (idGroupe: string) => {
     try {
-      const response = await fetch(`${API_URL}/groupes/${idGroupe}`, {
+      const response = await apiFetch(`/groupes/${idGroupe}`, {
         method: "DELETE",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {

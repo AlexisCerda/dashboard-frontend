@@ -1,14 +1,13 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import type { Configuration } from "../types/Configuration";
-import { API_URL, getAuthHeaders } from "./apiConfig";
+import { apiFetch } from "./apiConfig";
 
 export const useGetConfig = ()=>{
   const GetConfig = async () => {
     try {
-      const response = await fetch(`${API_URL}/config`, {
+      const response = await apiFetch(`/config`, {
         method: "GET",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -30,9 +29,8 @@ export const useGetConfig = ()=>{
 export const useUpdateConfig = ()=>{
   const UpdateConfig = async (emailAdmin : string, maxTaches : number, maxGroupes : number, maxNotes : number, maxMouvements : number, maxAchats : number, maxPrets : number, maxConfigurations : number, maxImages : number) => {
     try {
-      const response = await fetch(`${API_URL}/config`, {
+      const response = await apiFetch(`/config`, {
         method: "PUT",
-        headers: getAuthHeaders(),
         body: JSON.stringify({
         emailAdmin : emailAdmin,
         maxTaches : maxTaches,
@@ -75,9 +73,8 @@ export const useGetConfiguration = ()=>{
       if (!context?.groupeActifId || context.auth.idUser == null) {
         throw new Error("Problème server");
       }
-      const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/membres/${context.auth.idUser}/configurations`, {
+      const response = await apiFetch(`/groupes/${context.groupeActifId}/membres/${context.auth.idUser}/configurations`, {
         method: "GET",
-        headers: getAuthHeaders(),
       });
 
       if (response.status === 404) {
@@ -102,9 +99,8 @@ export const useGetConfiguration = ()=>{
 export const useUpdateConfiguration = ()=>{
   const UpdateConfig = async (configuration : Configuration) => {
     try {
-      const response = await fetch(`${API_URL}/configurations`, {
+      const response = await apiFetch(`/configurations`, {
         method: "PATCH",
-        headers: getAuthHeaders(),
         body: JSON.stringify({
         id : configuration.id,
         idMembre : configuration.idMembre,
@@ -145,9 +141,8 @@ export const useUpdateConfiguration = ()=>{
 export const useDeleteConfiguration = ()=>{
   const DeleteConfig = async (idConfiguration: number) => {
     try {
-      const response = await fetch(`${API_URL}/configurations/${idConfiguration}`, {
+      const response = await apiFetch(`/configurations/${idConfiguration}`, {
         method: "DELETE",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -172,9 +167,8 @@ export const useCreateConfiguration = ()=>{
       if (!context?.groupeActifId || context.auth.idUser == null) {
         throw new Error("Problème serveur");
       }
-      const response = await fetch(`${API_URL}/groupes/${context.groupeActifId}/membres/${context.auth.idUser}/configurations`, {
+      const response = await apiFetch(`/groupes/${context.groupeActifId}/membres/${context.auth.idUser}/configurations`, {
         method: "POST",
-        headers: getAuthHeaders(),
         body: nom,
       }); 
 

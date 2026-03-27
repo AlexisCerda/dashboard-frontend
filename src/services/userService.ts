@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import type { User } from "../pages/UpdateUserPage";
-import { API_URL, getAuthHeaders } from "./apiConfig";
+import { apiFetch } from "./apiConfig";
 
 export interface MembreDTO {
   id: number;
@@ -15,9 +15,8 @@ export const useGetUser = () => {
 
   const getUser = async () => {
     try {
-      const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}`, {
+      const response = await apiFetch(`/membres/${context?.auth.idUser}`, {
         method: "GET",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -41,9 +40,8 @@ export const useUpdateUser = () => {
 
   const updateUser = async (u : User) => {
     try {
-      const response = await fetch(`${API_URL}/membres/`, {
+      const response = await apiFetch(`/membres/`, {
         method: "PUT",
-        headers: getAuthHeaders(),
         body: JSON.stringify({
           id: context?.auth.idUser,
           nom: u.nom,
@@ -73,9 +71,8 @@ export const useUpdatePwdUser = () => {
 
   const updateUser = async (pwd : string) => {
     try {
-      const response = await fetch(`${API_URL}/membres/${context?.auth.idUser}/pwd`, {
+      const response = await apiFetch(`/membres/${context?.auth.idUser}/pwd`, {
         method: "PATCH",
-        headers: getAuthHeaders(),
         body: JSON.stringify({
         motDePasse: pwd
       }),
@@ -99,9 +96,8 @@ export const useUpdatePwdUser = () => {
 export const useCreateUser = ()=>{
   const CreateUser = async (pwd : string, u : User ) => {
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
+      const response = await apiFetch(`/auth/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
         nom: u.nom,
         prenom : u.prenom,
@@ -138,9 +134,8 @@ export const useCreateUser = ()=>{
 export const useGetAllUser = ()=>{
   const GetAllUser = async () => {
     try {
-      const response = await fetch(`${API_URL}/membres`, {
+      const response = await apiFetch(`/membres`, {
         method: "GET",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -162,9 +157,8 @@ export const useGetAllUser = ()=>{
 export const useDeleteUser = ()=>{
   const UserAdmin = async (idMembre: string) => {
     try {
-      const response = await fetch(`${API_URL}/membres/${idMembre}`, {
+      const response = await apiFetch(`/membres/${idMembre}`, {
         method: "DELETE",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -188,9 +182,8 @@ export const useGetDateLastCoByUser = () => {
 
   const getDateLastCo = async (idUser : number ) => {
     try {
-      const response = await fetch(`${API_URL}/membres/${idUser}/last-co`, {
+      const response = await apiFetch(`/membres/${idUser}/last-co`, {
         method: "GET",
-        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {

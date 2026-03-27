@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { API_URL, getAuthHeaders } from "./apiConfig";
+import { apiFetch } from "./apiConfig";
 
 export interface PretDTO {
   id: number;
@@ -26,11 +26,10 @@ export const useGetPretGroupe = () => {
       return null;
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/prets`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/prets`,
       {
         method: "GET",
-        headers: getAuthHeaders(),
       },
     );
 
@@ -51,9 +50,8 @@ export const useGetPretGroupe = () => {
 
 export const useUpdateEtatPret = () => {
   const updateEtatPret = async (id: number, etat: string) => {
-    const response = await fetch(`${API_URL}/prets/${id}/etat`, {
+    const response = await apiFetch(`/prets/${id}/etat`, {
       method: "PATCH",
-      headers: getAuthHeaders(),
       body: JSON.stringify({ etat }),
     });
 
@@ -75,11 +73,10 @@ export const useUpdatePret = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/prets/${pret.id}`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/prets/${pret.id}`,
       {
         method: "PUT",
-        headers: getAuthHeaders(),
         body: JSON.stringify(pret),
       },
     );
@@ -102,11 +99,10 @@ export const useCreatePret = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/prets`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/prets`,
       {
         method: "POST",
-        headers: getAuthHeaders(),
         body: JSON.stringify(pret),
       },
     );
@@ -129,11 +125,10 @@ export const useDeletePret = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/prets/${idPret}`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/prets/${idPret}`,
       {
         method: "DELETE",
-        headers: getAuthHeaders(),
       },
     );
 
@@ -149,9 +144,8 @@ export const useDeletePret = () => {
 
 export const useGetEtatPret = () => {
   const getEtatPret = async (idPret: number) => {
-    const response = await fetch(`${API_URL}/prets/${idPret}/etat`, {
+    const response = await apiFetch(`/prets/${idPret}/etat`, {
       method: "GET",
-      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -166,9 +160,8 @@ export const useGetEtatPret = () => {
 
 export const useGetAllEtatsPret = () => {
   const getAllEtatsPret = async () => {
-    const response = await fetch(`${API_URL}/prets/etats`, {
+    const response = await apiFetch(`/prets/etats`, {
       method: "GET",
-      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {

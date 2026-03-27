@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { API_URL, getAuthHeaders } from "./apiConfig";
+import { apiFetch } from "./apiConfig";
 
 export interface MouvementDTO {
   id: number;
@@ -23,11 +23,10 @@ export const useGetMouvementGroupe = () => {
       return null;
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/mouvements`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/mouvements`,
       {
         method: "GET",
-        headers: getAuthHeaders(),
       },
     );
 
@@ -48,9 +47,8 @@ export const useGetMouvementGroupe = () => {
 
 export const useUpdateEtatMouvement = () => {
   const updateEtatMouvement = async (id: number, etat: string) => {
-    const response = await fetch(`${API_URL}/mouvements/${id}/etat`, {
+    const response = await apiFetch(`/mouvements/${id}/etat`, {
       method: "PATCH",
-      headers: getAuthHeaders(),
       body: JSON.stringify({ etat }),
     });
 
@@ -72,11 +70,10 @@ export const useUpdateMouvement = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/mouvements/${mouvement.id}`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/mouvements/${mouvement.id}`,
       {
         method: "PUT",
-        headers: getAuthHeaders(),
         body: JSON.stringify(mouvement),
       },
     );
@@ -99,11 +96,10 @@ export const useCreateMouvement = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/mouvements`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/mouvements`,
       {
         method: "POST",
-        headers: getAuthHeaders(),
         body: JSON.stringify(mouvement),
       },
     );
@@ -126,11 +122,10 @@ export const useDeleteMouvement = () => {
       throw new Error("Aucun groupe actif");
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context.groupeActifId}/mouvements/${idMouvement}`,
+    const response = await apiFetch(
+      `/groupes/${context.groupeActifId}/mouvements/${idMouvement}`,
       {
         method: "DELETE",
-        headers: getAuthHeaders(),
       },
     );
 
@@ -146,9 +141,8 @@ export const useDeleteMouvement = () => {
 
 export const useGetEtatMouvement = () => {
   const getEtatMouvement = async (idMouvement: number) => {
-    const response = await fetch(`${API_URL}/mouvements/${idMouvement}/etat`, {
+    const response = await apiFetch(`/mouvements/${idMouvement}/etat`, {
       method: "GET",
-      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -163,9 +157,8 @@ export const useGetEtatMouvement = () => {
 
 export const useGetAllEtatsMouvement = () => {
   const getAllEtatsMouvement = async () => {
-    const response = await fetch(`${API_URL}/mouvements/etats`, {
+    const response = await apiFetch(`/mouvements/etats`, {
       method: "GET",
-      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {

@@ -19,7 +19,7 @@ import {
 } from "../services/groupeService";
 import { ROLE_ADMIN, ROLE_INVITE } from "../services/apiConfig";
 import type { User } from "../types/User";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import RGL, { WidthProvider } from "react-grid-layout/legacy";
 import "react-grid-layout/css/styles.css";
@@ -75,10 +75,14 @@ export default function DashboardPage() {
     document.body.classList.toggle("widget-interacting", active);
   }, []);
 
+  const navigate = useNavigate();
+
   const availableWidgets = WIDGETS_SINGLETONS.filter(
     (widgetName) => !layout.some((item) => item.i === widgetName),
   );
-
+  if (context?.auth.idUser == null || context?.auth.idUser == undefined ||context?.auth.token == null || context?.auth.token == undefined || context?.auth.token == "") {
+    return navigate("/MyDashboard/login");
+  }
   useEffect(() => {
     if (configCurrent !== null && configs.length > 0) {
       if (loadedConfigId.current !== configCurrent) {

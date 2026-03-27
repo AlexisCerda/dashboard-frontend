@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { API_URL, getAuthHeaders } from "./apiConfig";
+import { apiFetch } from "./apiConfig";
 
 export interface TacheDTO {
   id: number;
@@ -28,11 +28,10 @@ export const useGetTacheGroupe = () => {
       return null;
     }
 
-    const response = await fetch(
-      `${API_URL}/groupes/${context?.groupeActifId}/taches`,
+    const response = await apiFetch(
+      `/groupes/${context?.groupeActifId}/taches`,
       {
         method: "GET",
-        headers: getAuthHeaders(),
       },
     );
 
@@ -59,11 +58,10 @@ export const useGetTacheMembre = () => {
       return null;
     }
 
-    const response = await fetch(
-      `${API_URL}/membres/${context?.auth.idUser}/taches`,
+    const response = await apiFetch(
+      `/membres/${context?.auth.idUser}/taches`,
       {
         method: "GET",
-        headers: getAuthHeaders(),
       },
     );
 
@@ -84,9 +82,8 @@ export const useGetTacheMembre = () => {
 
 export const useAddMembreToTache = () => {
   const addMembreToTache = async (idTache: number, idMembre: number) => {
-    const response = await fetch(`${API_URL}/taches/${idTache}/membres`, {
+    const response = await apiFetch(`/taches/${idTache}/membres`, {
       method: "POST",
-      headers: getAuthHeaders(),
       body: JSON.stringify({ idMembre }),
     });
 
@@ -102,11 +99,10 @@ export const useAddMembreToTache = () => {
 
 export const useDeleteMembreFromTache = () => {
   const deleteMembreFromTache = async (idTache: number, idMembre: number) => {
-    const response = await fetch(
-      `${API_URL}/taches/${idTache}/membres/${idMembre}`,
+    const response = await apiFetch(
+      `/taches/${idTache}/membres/${idMembre}`,
       {
         method: "DELETE",
-        headers: getAuthHeaders(),
       },
     );
 
@@ -122,9 +118,8 @@ export const useDeleteMembreFromTache = () => {
 
 export const useUpdateTache = () => {
   const updateTache = async (tache: TacheDTO) => {
-    const response = await fetch(`${API_URL}/taches`, {
+    const response = await apiFetch(`/taches`, {
       method: "PUT",
-      headers: getAuthHeaders(),
       body: JSON.stringify(tache),
     });
 
@@ -140,9 +135,8 @@ export const useUpdateTache = () => {
 
 export const useDeleteTache = () => {
   const deleteTache = async (id: number) => {
-    const response = await fetch(`${API_URL}/taches/${id}`, {
+    const response = await apiFetch(`/taches/${id}`, {
       method: "DELETE",
-      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -158,11 +152,10 @@ export const useDeleteTache = () => {
 export const useAddTache = () => {
   const context = useContext(AuthContext);
   const addTache = async (tache: TacheDTO) => {
-    const response = await fetch(
-      `${API_URL}/groupes/${context?.groupeActifId}/taches`,
+    const response = await apiFetch(
+      `/groupes/${context?.groupeActifId}/taches`,
       {
         method: "POST",
-        headers: getAuthHeaders(),
         body: JSON.stringify(tache),
       },
     );
@@ -181,9 +174,8 @@ export const useAddTache = () => {
 
 export const useUpdateEtatTache = () => {
   const updateEtatTache = async (id: number, etat: string) => {
-    const response = await fetch(`${API_URL}/taches/${id}/etat`, {
+    const response = await apiFetch(`/taches/${id}/etat`, {
       method: "PATCH",
-      headers: getAuthHeaders(),
       body: JSON.stringify({ etat }),
     });
 
@@ -199,9 +191,8 @@ export const useUpdateEtatTache = () => {
 
 export const useGetEtatTache = () => {
   const getEtatTache = async () => {
-    const response = await fetch(`${API_URL}/taches/etats`, {
+    const response = await apiFetch(`/taches/etats`, {
       method: "GET",
-      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -222,9 +213,8 @@ export const useGetMembreByTache = () => {
       return null;
     }
 
-    const response = await fetch(`${API_URL}/taches/${idTache}/membres`, {
+    const response = await apiFetch(`/taches/${idTache}/membres`, {
       method: "GET",
-      headers: getAuthHeaders(),
     });
 
     if (response.status === 401 || response.status === 404) {
