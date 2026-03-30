@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo } from "react";
 import WidgetFrame from "../WidgetFrame";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
@@ -30,12 +30,14 @@ export interface AchatDTO {
   etat: string;
 }
 
-export default function WidgetAchats({
+const WidgetAchats = memo(function WidgetAchats({
   onClose,
   isGuest,
+  isInteracting = false,
 }: {
   onClose?: () => void;
   isGuest?: boolean;
+  isInteracting?: boolean;
 }) {
   const [achats, setAchats] = useState<AchatDTO[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -248,148 +250,157 @@ export default function WidgetAchats({
       options={headerActions}
     >
       <div ref={widgetContainerRef} className="flex flex-col h-full p-3">
-        {erreur && (
-          <div className="mb-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md text-xs font-medium">
-            {erreur}
+        {isInteracting ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60">
+             <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-emerald-500 animate-spin" />
+             <p className="text-xs font-medium italic">Optimisation en cours...</p>
           </div>
-        )}
-        <div className="mb-3">
-          {!isSearchCollapsed && (
-            <input
-              type="text"
-              placeholder="Rechercher un achat, matériel, demandeur..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="border border-emerald-200 bg-emerald-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-            />
-          )}
-        </div>
-
-        <ul className="space-y-2 flex-1 overflow-y-auto">
-          {filteredAchats.map((a) => (
-            <li
-              key={a.id}
-              className={`${isCompactLayout ? "flex flex-col" : "grid grid-cols-[minmax(0,1fr)_9rem] items-start"} gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200`}
-            >
-              <div className="flex flex-col flex-1 min-w-0 gap-1">
-                <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} font-semibold text-slate-800 flex items-center gap-1 overflow-hidden`}>
-                  <span className="text-gray-400 font-normal">Qte:</span>
-                  <EditableField
-                    value={String(a.quantite)}
-                    type="number"
-                    onSave={(newVal) => {
-                      a.quantite = Number(newVal);
-                      handleUpdateField(a);
-                    }}
-                    isGuest={isGuest}
-                    noWrap={!isCompactLayout}
-                  />
-                  <span>-</span>
-                  <EditableField
-                    value={a.nomMateriel}
-                    onSave={(newVal) => {
-                      a.nomMateriel = newVal;
-                      handleUpdateField(a);
-                    }}
-                    isGuest={isGuest}
-                    placeholder="Matériel"
-                    noWrap={!isCompactLayout}
-                  />
-                </div>
-
-                <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} text-xs text-slate-500 flex items-center gap-2 overflow-hidden`}>
-                  <EditableField
-                    value={a.marqueMateriel}
-                    onSave={(newVal) => {
-                      a.marqueMateriel = newVal;
-                      handleUpdateField(a);
-                    }}
-                    isGuest={isGuest}
-                    placeholder="Marque"
-                    noWrap={!isCompactLayout}
-                  />
-                  <span className="text-gray-300">|</span>
-                  <span className="text-gray-400">Réf:</span>
-                  <EditableField
-                    value={a.reference}
-                    onSave={(newVal) => {
-                      a.reference = newVal;
-                      handleUpdateField(a);
-                    }}
-                    isGuest={isGuest}
-                    placeholder="Aucune réf."
-                    noWrap={!isCompactLayout}
-                  />
-                </div>
-
-                <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} text-[11px] text-gray-500 flex gap-1 mt-1 overflow-hidden`}>
-                  <span>Demandé par :</span>
-                  <EditableField
-                    value={a.prenomPersonne}
-                    onSave={(newVal) => {
-                      a.prenomPersonne = newVal;
-                      handleUpdateField(a);
-                    }}
-                    isGuest={isGuest}
-                    placeholder="Prénom"
-                    noWrap={!isCompactLayout}
-                  />
-                  <EditableField
-                    value={a.nomPersonne}
-                    onSave={(newVal) => {
-                      a.nomPersonne = newVal;
-                      handleUpdateField(a);
-                    }}
-                    isGuest={isGuest}
-                    placeholder="Nom"
-                    noWrap={!isCompactLayout}
-                  />
-                </div>
+        ) : (
+          <>
+            {erreur && (
+              <div className="mb-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md text-xs font-medium">
+                {erreur}
               </div>
+            )}
+            <div className="mb-3">
+              {!isSearchCollapsed && (
+                <input
+                  type="text"
+                  placeholder="Rechercher un achat, matériel, demandeur..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="border border-emerald-200 bg-emerald-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                />
+              )}
+            </div>
 
-              <div className={`flex ${isCompactLayout ? "w-full flex-row items-center justify-end mt-2" : "w-full flex-col items-end"} gap-2`}>
-                {a.etat &&
-                  (!isGuest ? (
-                    <select
-                      value={a.etat}
-                      onChange={async (e) => {
-                        if (a.id !== undefined) {
-                          await updateEtatAchat(a.id, e.target.value);
-                          await refreshData();
-                        }
-                      }}
-                      className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-xs p-1.5 rounded-lg border border-emerald-200 outline-none bg-emerald-50 text-emerald-800`}
-                    >
-                      {etats.map((etat) => (
-                        <option key={etat} value={etat}>
-                          {etat.replace("_", " ").toLowerCase()}
-                        </option>
+            <ul className="space-y-2 flex-1 overflow-y-auto">
+              {filteredAchats.map((a) => (
+                <li
+                  key={a.id}
+                  className={`${isCompactLayout ? "flex flex-col" : "grid grid-cols-[minmax(0,1fr)_9rem] items-start"} gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200`}
+                >
+                  <div className="flex flex-col flex-1 min-w-0 gap-1">
+                    <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} font-semibold text-slate-800 flex items-center gap-1 overflow-hidden`}>
+                      <span className="text-gray-400 font-normal">Qte:</span>
+                      <EditableField
+                        value={String(a.quantite)}
+                        type="number"
+                        onSave={(newVal) => {
+                          a.quantite = Number(newVal);
+                          handleUpdateField(a);
+                        }}
+                        isGuest={isGuest}
+                        noWrap={!isCompactLayout}
+                      />
+                      <span>-</span>
+                      <EditableField
+                        value={a.nomMateriel}
+                        onSave={(newVal) => {
+                          a.nomMateriel = newVal;
+                          handleUpdateField(a);
+                        }}
+                        isGuest={isGuest}
+                        placeholder="Matériel"
+                        noWrap={!isCompactLayout}
+                      />
+                    </div>
+
+                    <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} text-xs text-slate-500 flex items-center gap-2 overflow-hidden`}>
+                      <EditableField
+                        value={a.marqueMateriel}
+                        onSave={(newVal) => {
+                          a.marqueMateriel = newVal;
+                          handleUpdateField(a);
+                        }}
+                        isGuest={isGuest}
+                        placeholder="Marque"
+                        noWrap={!isCompactLayout}
+                      />
+                      <span className="text-gray-300">|</span>
+                      <span className="text-gray-400">Réf:</span>
+                      <EditableField
+                        value={a.reference}
+                        onSave={(newVal) => {
+                          a.reference = newVal;
+                          handleUpdateField(a);
+                        }}
+                        isGuest={isGuest}
+                        placeholder="Aucune réf."
+                        noWrap={!isCompactLayout}
+                      />
+                    </div>
+
+                    <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} text-[11px] text-gray-500 flex gap-1 mt-1 overflow-hidden`}>
+                      <span>Demandé par :</span>
+                      <EditableField
+                        value={a.prenomPersonne}
+                        onSave={(newVal) => {
+                          a.prenomPersonne = newVal;
+                          handleUpdateField(a);
+                        }}
+                        isGuest={isGuest}
+                        placeholder="Prénom"
+                        noWrap={!isCompactLayout}
+                      />
+                      <EditableField
+                        value={a.nomPersonne}
+                        onSave={(newVal) => {
+                          a.nomPersonne = newVal;
+                          handleUpdateField(a);
+                        }}
+                        isGuest={isGuest}
+                        placeholder="Nom"
+                        noWrap={!isCompactLayout}
+                      />
+                    </div>
+                  </div>
+
+                  <div className={`flex ${isCompactLayout ? "w-full flex-row items-center justify-end mt-2" : "w-full flex-col items-end"} gap-2`}>
+                    {a.etat &&
+                      (!isGuest ? (
+                        <select
+                          value={a.etat}
+                          onChange={async (e) => {
+                            if (a.id !== undefined) {
+                              await updateEtatAchat(a.id, e.target.value);
+                              await refreshData();
+                            }
+                          }}
+                          className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-xs p-1.5 rounded-lg border border-emerald-200 outline-none bg-emerald-50 text-emerald-800`}
+                        >
+                          {etats.map((etat) => (
+                            <option key={etat} value={etat}>
+                              {etat.replace("_", " ").toLowerCase()}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded-full font-medium`}>
+                          {a.etat.replace("_", " ").toLowerCase()}
+                        </p>
                       ))}
-                    </select>
-                  ) : (
-                    <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1 rounded-full font-medium`}>
-                      {a.etat.replace("_", " ").toLowerCase()}
-                    </p>
-                  ))}
 
-                {!isGuest && (
-                  <button
-                    onClick={() => handleDeleteAchat(a.id)}
-                    className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
-                    title="Supprimer cet achat"
-                  >
-                    <CircleX size={18} />
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
-          {filteredAchats.length === 0 && (
-            <p className="text-center text-gray-400 mt-4 text-xs italic">
-              Aucun achat enregistré.
-            </p>
-          )}
-        </ul>
+                    {!isGuest && (
+                      <button
+                        onClick={() => handleDeleteAchat(a.id)}
+                        className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
+                        title="Supprimer cet achat"
+                      >
+                        <CircleX size={18} />
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+              {filteredAchats.length === 0 && (
+                <p className="text-center text-gray-400 mt-4 text-xs italic">
+                  Aucun achat enregistré.
+                </p>
+              )}
+            </ul>
+          </>
+        )}
       </div>
 
       <ModalFormulaire
@@ -398,6 +409,7 @@ export default function WidgetAchats({
         title="Nouvelle demande d'achat"
       >
         <form onSubmit={handleSubmitAchat} className="flex flex-col gap-3">
+          {/* ... Modal content ... */}
           <div className="grid grid-cols-4 gap-3">
             <div className="col-span-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -515,4 +527,6 @@ export default function WidgetAchats({
       </ModalFormulaire>
     </WidgetFrame>
   );
-}
+});
+
+export default WidgetAchats;

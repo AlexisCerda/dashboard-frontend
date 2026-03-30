@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo, useContext } from "react";
 import WidgetFrame from "../WidgetFrame";
-import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { 
   useCreateMouvement, 
@@ -20,9 +19,15 @@ import EditableField from "../EditableField";
 
 const COMPACT_LAYOUT_BREAKPOINT = 360;
 
-
-
-export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () => void; isGuest?: boolean }) {
+const WidgetMouvements = memo(function WidgetMouvements({ 
+  onClose, 
+  isGuest,
+  isInteracting = false 
+}: { 
+  onClose?: () => void; 
+  isGuest?: boolean;
+  isInteracting?: boolean;
+}) {
   const [mouvements, setMouvements] = useState<MouvementDTO[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [etats, setEtats] = useState<string[]>([]); 
@@ -275,163 +280,171 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
       options={headerActions}
     >
       <div ref={widgetContainerRef} className="flex flex-col h-full p-3">
-        {erreur && (
-          <div className="mb-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md text-xs font-medium">
-            {erreur}
+        {isInteracting ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60">
+             <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-purple-500 animate-spin" />
+             <p className="text-xs font-medium italic">Optimisation en cours...</p>
           </div>
-        )}
-        {updateError && (
-          <div className="mb-2 px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-md text-[10px] font-bold animate-pulse shadow-sm">
-            ⚠️ {updateError}
-          </div>
-        )}
-        <div className="mb-3">
-          {!isSearchCollapsed && (
-            <input
-              type="text"
-              placeholder="Rechercher une personne, une date..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="border border-purple-200 bg-purple-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-purple-200"
-            />
-          )}
-        </div>
+        ) : (
+          <>
+            {erreur && (
+              <div className="mb-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md text-xs font-medium">
+                {erreur}
+              </div>
+            )}
+            {updateError && (
+              <div className="mb-2 px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-md text-[10px] font-bold animate-pulse shadow-sm">
+                ⚠️ {updateError}
+              </div>
+            )}
+            <div className="mb-3">
+              {!isSearchCollapsed && (
+                <input
+                  type="text"
+                  placeholder="Rechercher une personne, une date..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="border border-purple-200 bg-purple-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                />
+              )}
+            </div>
 
-        <ul className="space-y-2 flex-1 overflow-y-auto">
-          {filteredMouvements.map((m) => (
-            <li
-              key={m.id}
-              className={`${isCompactLayout ? "flex flex-col" : "flex flex-row items-start"} gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200`}
-            >
-              <div className="flex flex-col flex-1 gap-1">
-                <div className="font-semibold text-slate-800 flex flex-wrap gap-1">
-                  <EditableField
-                    value={m.prenom} 
-                    onSave={(newVal) => { handleUpdateField({ ...m, prenom: newVal }); }} 
-                    isGuest={isGuest}
-                    placeholder="Prénom"
-                  />
-                  <EditableField
-                    value={m.nom} 
-                    onSave={(newVal) => { handleUpdateField({ ...m, nom: newVal }); }} 
-                    isGuest={isGuest}
-                    placeholder="Nom"
-                  />
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-4 text-xs mt-2 font-medium">
-                  <div className="flex items-center gap-2 px-2 py-1 bg-green-50 text-green-700 rounded-md border border-green-100 shadow-sm" title="Arrivée">
-                    <LogIn size={14} className="shrink-0 text-green-500" />
-                    <EditableField
-                      value={m.dateArrivee} 
-                      type="date"
-                      isGuest={isGuest}
-                      onSave={(newVal) => { handleUpdateField({ ...m, dateArrivee: formatDate(newVal) }); }} 
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 px-2 py-1 bg-red-50 text-red-700 rounded-md border border-red-100 shadow-sm" title="Départ">
-                    <LogOut size={14} className="shrink-0 text-red-400" />
-                    <EditableField
-                      value={m.dateDepart} 
-                      type="date"
-                      isGuest={isGuest}
-                      onSave={(newVal) => { handleUpdateField({ ...m, dateDepart: formatDate(newVal) }); }} 
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100 shadow-sm" title="Modifier le service">
-                    <Building2 size={10} className="text-indigo-400" />
-                    <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter mr-0.5">Service:</span>
-                    <EditableField 
-                      value={m.service || ""}
-                      onSave={(newVal) => { handleUpdateField({ ...m, service: newVal }); }}
-                      placeholder="Non défini"
-                      isGuest={isGuest}
-                    />
-                  </div>
-                  
-                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-700 rounded-lg border border-amber-100 shadow-sm" title="Modifier le statut">
-                    <UserCircle size={10} className="text-amber-400" />
-                    <span className="text-[10px] text-amber-400 font-bold uppercase tracking-tighter mr-0.5">Statut:</span>
-                    <EditableField 
-                      value={m.statut || ""}
-                      onSave={(newVal) => { handleUpdateField({ ...m, statut: newVal }); }}
-                      placeholder="Non défini"
-                      isGuest={isGuest}
-                    />
-                  </div>
-
-                  <div className="flex items-center flex-wrap gap-2">
-                    {m.urlTicketGlpi && (
-                      <a 
-                        href={m.urlTicketGlpi} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all shadow-sm hover:shadow-md active:scale-95 group"
-                        title="Ouvrir le Ticket GLPI"
-                      >
-                        <Ticket size={12} className="group-hover:rotate-12 transition-transform" />
-                        Ticket GLPI
-                      </a>
-                    )}
+            <ul className="space-y-2 flex-1 overflow-y-auto">
+              {filteredMouvements.map((m) => (
+                <li
+                  key={m.id}
+                  className={`${isCompactLayout ? "flex flex-col" : "flex flex-row items-start"} gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200`}
+                >
+                  <div className="flex flex-col flex-1 gap-1">
+                    <div className="font-semibold text-slate-800 flex flex-wrap gap-1">
+                      <EditableField
+                        value={m.prenom} 
+                        onSave={(newVal) => { handleUpdateField({ ...m, prenom: newVal }); }} 
+                        isGuest={isGuest}
+                        placeholder="Prénom"
+                      />
+                      <EditableField
+                        value={m.nom} 
+                        onSave={(newVal) => { handleUpdateField({ ...m, nom: newVal }); }} 
+                        isGuest={isGuest}
+                        placeholder="Nom"
+                      />
+                    </div>
                     
-                    {!isGuest && (
-                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 shadow-sm hover:bg-blue-100 transition-colors" title="Modifier l'URL du Ticket">
-                        <Ticket size={10} className="text-blue-400 shrink-0" />
-                        <span className="text-[10px] text-blue-400 font-bold uppercase tracking-tighter mr-0.5">Ticket:</span>
+                    <div className="flex flex-wrap items-center gap-4 text-xs mt-2 font-medium">
+                      <div className="flex items-center gap-2 px-2 py-1 bg-green-50 text-green-700 rounded-md border border-green-100 shadow-sm" title="Arrivée">
+                        <LogIn size={14} className="shrink-0 text-green-500" />
+                        <EditableField
+                          value={m.dateArrivee} 
+                          type="date"
+                          isGuest={isGuest}
+                          onSave={(newVal) => { handleUpdateField({ ...m, dateArrivee: formatDate(newVal) }); }} 
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 px-2 py-1 bg-red-50 text-red-700 rounded-md border border-red-100 shadow-sm" title="Départ">
+                        <LogOut size={14} className="shrink-0 text-red-400" />
+                        <EditableField
+                          value={m.dateDepart} 
+                          type="date"
+                          isGuest={isGuest}
+                          onSave={(newVal) => { handleUpdateField({ ...m, dateDepart: formatDate(newVal) }); }} 
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100 shadow-sm" title="Modifier le service">
+                        <Building2 size={10} className="text-indigo-400" />
+                        <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter mr-0.5">Service:</span>
                         <EditableField 
-                          value={m.urlTicketGlpi || ""}
-                          onSave={(newVal) => { handleUpdateField({ ...m, urlTicketGlpi: newVal }); }}
-                          placeholder={m.urlTicketGlpi ? "Détails" : "+ Ajouter lien"}
+                          value={m.service || ""}
+                          onSave={(newVal) => { handleUpdateField({ ...m, service: newVal }); }}
+                          placeholder="Non défini"
                           isGuest={isGuest}
                         />
                       </div>
+                      
+                      <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-700 rounded-lg border border-amber-100 shadow-sm" title="Modifier le statut">
+                        <UserCircle size={10} className="text-amber-400" />
+                        <span className="text-[10px] text-amber-400 font-bold uppercase tracking-tighter mr-0.5">Statut:</span>
+                        <EditableField 
+                          value={m.statut || ""}
+                          onSave={(newVal) => { handleUpdateField({ ...m, statut: newVal }); }}
+                          placeholder="Non défini"
+                          isGuest={isGuest}
+                        />
+                      </div>
+
+                      <div className="flex items-center flex-wrap gap-2">
+                        {m.urlTicketGlpi && (
+                          <a 
+                            href={m.urlTicketGlpi} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all shadow-sm hover:shadow-md active:scale-95 group"
+                            title="Ouvrir le Ticket GLPI"
+                          >
+                            <Ticket size={12} className="group-hover:rotate-12 transition-transform" />
+                            Ticket GLPI
+                          </a>
+                        )}
+                        
+                        {!isGuest && (
+                          <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 shadow-sm hover:bg-blue-100 transition-colors" title="Modifier l'URL du Ticket">
+                            <Ticket size={10} className="text-blue-400 shrink-0" />
+                            <span className="text-[10px] text-blue-400 font-bold uppercase tracking-tighter mr-0.5">Ticket:</span>
+                            <EditableField 
+                              value={m.urlTicketGlpi || ""}
+                              onSave={(newVal) => { handleUpdateField({ ...m, urlTicketGlpi: newVal }); }}
+                              placeholder={m.urlTicketGlpi ? "Détails" : "+ Ajouter lien"}
+                              isGuest={isGuest}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`flex ${isCompactLayout ? "w-full" : "w-auto self-start"} items-center justify-end gap-2`}>
+                    {m.etat && (
+                      !isGuest ? (
+                        <select 
+                          value={m.etat} 
+                          onChange={async (e) => {
+                            if (m.id !== undefined) {
+                              await updateEtatMouvement(m.id, e.target.value);
+                              await refreshData();
+                            }
+                          }}
+                          className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-36"} text-xs p-1.5 rounded-lg border border-purple-200 outline-none bg-purple-50 text-purple-800`}
+                        >
+                          {etats.map((etat) => (
+                            <option key={etat} value={etat}>
+                              {etat.replace("_", " ").toLowerCase()}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-36"} text-center text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-1 rounded-full font-medium`}>{m.etat.replace("_", " ").toLowerCase()}</p>
+                      )
+                    )}
+
+                    {!isGuest && (
+                      <button 
+                        onClick={() => handleDeleteMouvement(m.id)} 
+                        className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
+                      >
+                        <CircleX size={18} />
+                      </button>
                     )}
                   </div>
-                </div>
-              </div>
-              <div className={`flex ${isCompactLayout ? "w-full" : "w-auto self-start"} items-center justify-end gap-2`}>
-                {m.etat && (
-                  !isGuest ? (
-                    <select 
-                      value={m.etat} 
-                      onChange={async (e) => {
-                        if (m.id !== undefined) {
-                          await updateEtatMouvement(m.id, e.target.value);
-                          await refreshData();
-                        }
-                      }}
-                      className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-36"} text-xs p-1.5 rounded-lg border border-purple-200 outline-none bg-purple-50 text-purple-800`}
-                    >
-                      {etats.map((etat) => (
-                        <option key={etat} value={etat}>
-                          {etat.replace("_", " ").toLowerCase()}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-36"} text-center text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-1 rounded-full font-medium`}>{m.etat.replace("_", " ").toLowerCase()}</p>
-                  )
-                )}
-
-                {!isGuest && (
-                  <button 
-                    onClick={() => handleDeleteMouvement(m.id)} 
-                    className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
-                  >
-                    <CircleX size={18} />
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
-          {filteredMouvements.length === 0 && (
-            <p className="text-center text-gray-400 mt-4 text-xs italic">Aucun mouvement enregistré.</p>
-          )}
-        </ul>
-        
+                </li>
+              ))}
+              {filteredMouvements.length === 0 && (
+                <p className="text-center text-gray-400 mt-4 text-xs italic">Aucun mouvement enregistré.</p>
+              )}
+            </ul>
+          </>
+        )}
       </div>
       
       <ModalFormulaire
@@ -557,4 +570,6 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
       </ModalFormulaire>
     </WidgetFrame>
   );
-}
+});
+
+export default WidgetMouvements;

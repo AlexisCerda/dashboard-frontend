@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, memo, useContext } from "react";
 import WidgetFrame from "../WidgetFrame";
-import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import {
   useCreatePret,
@@ -31,16 +30,18 @@ export interface PretDTO {
   dateFin: string;
 }
 
-export default function WidgetPrets({
+const WidgetPrets = memo(function WidgetPrets({
   onClose,
   isGuest,
+  isInteracting = false,
 }: {
   onClose?: () => void;
   isGuest?: boolean;
+  isInteracting?: boolean;
 }) {
   const [prets, setPrets] = useState<PretDTO[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [etats, setEtats] = useState<string[]>([]);
+  const [etats, setEtats] = useState<string[]>([]);
   const [nomMateriel, setNomMateriel] = useState("");
   const [marqueMateriel, setMarqueMateriel] = useState("");
   const [nomPersonne, setNomPersonne] = useState("");
@@ -114,7 +115,7 @@ export default function WidgetPrets({
     await refreshData();
     setErreur("");
 
-    setIsModalOpen(false);
+    setIsModalOpen(false);
     setNomMateriel("");
     setMarqueMateriel("");
     setNomPersonne("");
@@ -172,7 +173,7 @@ export default function WidgetPrets({
 
       reconnectDelay: 5000,
       onConnect: () => {
-        stompClient.subscribe(frequence, (message) => {
+        stompClient.subscribe(frequence, (message) => {
           if (message.body === "REFRESH_PRETS") {
             refreshData();
           }
@@ -277,161 +278,170 @@ export default function WidgetPrets({
       options={headerActions}
     >
       <div ref={widgetContainerRef} className="flex flex-col h-full p-3">
-        {erreur && (
-          <div className="mb-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md text-xs font-medium">
-            {erreur}
+        {isInteracting ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60">
+             <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-amber-500 animate-spin" />
+             <p className="text-xs font-medium italic">Optimisation en cours...</p>
           </div>
-        )}
-        <div className="mb-3">
-          {!isSearchCollapsed && (
-            <input
-              type="text"
-              placeholder="Rechercher un prêt, matériel, emprunteur..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="border border-amber-200 bg-amber-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-amber-200"
-            />
-          )}
-        </div>
-
-        <ul className="space-y-2 flex-1 overflow-y-auto">
-          {filteredPrets.map((p) => (
-            <li
-              key={p.id}
-              className={`${isCompactLayout ? "flex flex-col" : "grid grid-cols-[minmax(0,1fr)_9rem] items-start"} gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200`}
-            >
-              <div className="flex flex-col flex-1 min-w-0 gap-1">
-                <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} font-semibold text-slate-800 flex items-center gap-1 overflow-hidden`}>
-                  <span className="text-gray-400 font-normal">Qte:</span>
-                  <EditableField
-                    value={String(p.quantite)}
-                    type="number"
-                    onSave={(newVal) => {
-                      p.quantite = Number(newVal);
-                      handleUpdateField(p);
-                    }}
-                    isGuest={isGuest}
-                    noWrap={!isCompactLayout}
-                  />
-                  <span>-</span>
-                  <EditableField
-                    value={p.nomMateriel}
-                    onSave={(newVal) => {
-                      p.nomMateriel = newVal;
-                      handleUpdateField(p);
-                    }}
-                    isGuest={isGuest}
-                    placeholder="Matériel"
-                    noWrap={!isCompactLayout}
-                  />
-                </div>
-
-                <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
-                  <EditableField
-                    value={p.marqueMateriel}
-                    onSave={(newVal) => {
-                      p.marqueMateriel = newVal;
-                      handleUpdateField(p);
-                    }}
-                    isGuest={isGuest}
-                    placeholder="Marque"
-                    noWrap={!isCompactLayout}
-                  />
-                  <span className="text-gray-300">|</span>
-                  <span className="text-gray-400">Période:</span>
-                  <EditableField
-                    value={p.dateDebut}
-                    type="date"
-                    isGuest={isGuest}
-                    onSave={(newVal) => {
-                      p.dateDebut = formatDate(newVal);
-                      handleUpdateField(p);
-                    }}
-                    placeholder="Début"
-                    noWrap={false}
-                  />
-                  <span className="text-gray-300">→</span>
-                  <EditableField
-                    value={p.dateFin}
-                    type="date"
-                    isGuest={isGuest}
-                    onSave={(newVal) => {
-                      p.dateFin = formatDate(newVal);
-                      handleUpdateField(p);
-                    }}
-                    placeholder="Fin"
-                    noWrap={false}
-                  />
-                </div>
-
-                <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} text-[11px] text-gray-500 flex gap-1 mt-1 overflow-hidden`}>
-                  <span>Emprunteur :</span>
-                  <EditableField
-                    value={p.prenomPersonne}
-                    onSave={(newVal) => {
-                      p.prenomPersonne = newVal;
-                      handleUpdateField(p);
-                    }}
-                    isGuest={isGuest}
-                    placeholder="Prénom"
-                    noWrap={!isCompactLayout}
-                  />
-                  <EditableField
-                    value={p.nomPersonne}
-                    onSave={(newVal) => {
-                      p.nomPersonne = newVal;
-                      handleUpdateField(p);
-                    }}
-                    isGuest={isGuest}
-                    placeholder="Nom"
-                    noWrap={!isCompactLayout}
-                  />
-                </div>
+        ) : (
+          <>
+            {erreur && (
+              <div className="mb-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md text-xs font-medium">
+                {erreur}
               </div>
+            )}
+            <div className="mb-3">
+              {!isSearchCollapsed && (
+                <input
+                  type="text"
+                  placeholder="Rechercher un prêt, matériel, emprunteur..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="border border-amber-200 bg-amber-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                />
+              )}
+            </div>
 
-              <div className={`flex ${isCompactLayout ? "w-full flex-row items-center justify-end mt-2" : "w-full flex-col items-end"} gap-2`}>
-                {p.etat &&
-                  (!isGuest ? (
-                    <select
-                      value={p.etat}
-                      onChange={async (e) => {
-                        if (p.id !== undefined) {
-                          await updateEtatPret(p.id, e.target.value);
-                          await refreshData();
-                        }
-                      }}
-                      className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-xs p-1.5 rounded-lg border border-amber-200 outline-none bg-amber-50 text-amber-800`}
-                    >
-                      {etats.map((etat) => (
-                        <option key={etat} value={etat}>
-                          {etat.replace("_", " ").toLowerCase()}
-                        </option>
+            <ul className="space-y-2 flex-1 overflow-y-auto">
+              {filteredPrets.map((p) => (
+                <li
+                  key={p.id}
+                  className={`${isCompactLayout ? "flex flex-col" : "grid grid-cols-[minmax(0,1fr)_9rem] items-start"} gap-3 text-sm p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200`}
+                >
+                  <div className="flex flex-col flex-1 min-w-0 gap-1">
+                    <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} font-semibold text-slate-800 flex items-center gap-1 overflow-hidden`}>
+                      <span className="text-gray-400 font-normal">Qte:</span>
+                      <EditableField
+                        value={String(p.quantite)}
+                        type="number"
+                        onSave={(newVal) => {
+                          p.quantite = Number(newVal);
+                          handleUpdateField(p);
+                        }}
+                        isGuest={isGuest}
+                        noWrap={!isCompactLayout}
+                      />
+                      <span>-</span>
+                      <EditableField
+                        value={p.nomMateriel}
+                        onSave={(newVal) => {
+                          p.nomMateriel = newVal;
+                          handleUpdateField(p);
+                        }}
+                        isGuest={isGuest}
+                        placeholder="Matériel"
+                        noWrap={!isCompactLayout}
+                      />
+                    </div>
+
+                    <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
+                      <EditableField
+                        value={p.marqueMateriel}
+                        onSave={(newVal) => {
+                          p.marqueMateriel = newVal;
+                          handleUpdateField(p);
+                        }}
+                        isGuest={isGuest}
+                        placeholder="Marque"
+                        noWrap={!isCompactLayout}
+                      />
+                      <span className="text-gray-300">|</span>
+                      <span className="text-gray-400">Période:</span>
+                      <EditableField
+                        value={p.dateDebut}
+                        type="date"
+                        isGuest={isGuest}
+                        onSave={(newVal) => {
+                          p.dateDebut = formatDate(newVal);
+                          handleUpdateField(p);
+                        }}
+                        placeholder="Début"
+                        noWrap={false}
+                      />
+                      <span className="text-gray-300">→</span>
+                      <EditableField
+                        value={p.dateFin}
+                        type="date"
+                        isGuest={isGuest}
+                        onSave={(newVal) => {
+                          p.dateFin = formatDate(newVal);
+                          handleUpdateField(p);
+                        }}
+                        placeholder="Fin"
+                        noWrap={false}
+                      />
+                    </div>
+
+                    <div className={`${isCompactLayout ? "flex-wrap" : "flex-nowrap"} text-[11px] text-gray-500 flex gap-1 mt-1 overflow-hidden`}>
+                      <span>Emprunteur :</span>
+                      <EditableField
+                        value={p.prenomPersonne}
+                        onSave={(newVal) => {
+                          p.prenomPersonne = newVal;
+                          handleUpdateField(p);
+                        }}
+                        isGuest={isGuest}
+                        placeholder="Prénom"
+                        noWrap={!isCompactLayout}
+                      />
+                      <EditableField
+                        value={p.nomPersonne}
+                        onSave={(newVal) => {
+                          p.nomPersonne = newVal;
+                          handleUpdateField(p);
+                        }}
+                        isGuest={isGuest}
+                        placeholder="Nom"
+                        noWrap={!isCompactLayout}
+                      />
+                    </div>
+                  </div>
+
+                  <div className={`flex ${isCompactLayout ? "w-full flex-row items-center justify-end mt-2" : "w-full flex-col items-end"} gap-2`}>
+                    {p.etat &&
+                      (!isGuest ? (
+                        <select
+                          value={p.etat}
+                          onChange={async (e) => {
+                            if (p.id !== undefined) {
+                              await updateEtatPret(p.id, e.target.value);
+                              await refreshData();
+                            }
+                          }}
+                          className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-xs p-1.5 rounded-lg border border-amber-200 outline-none bg-amber-50 text-amber-800`}
+                        >
+                          {etats.map((etat) => (
+                            <option key={etat} value={etat}>
+                              {etat.replace("_", " ").toLowerCase()}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-full font-medium`}>
+                          {p.etat.replace("_", " ").toLowerCase()}
+                        </p>
                       ))}
-                    </select>
-                  ) : (
-                    <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-full font-medium`}>
-                      {p.etat.replace("_", " ").toLowerCase()}
-                    </p>
-                  ))}
 
-                {!isGuest && (
-                  <button
-                    onClick={() => handleDeletePret(p.id)}
-                    className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
-                    title="Supprimer ce prêt"
-                  >
-                    <CircleX size={18} />
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
-          {filteredPrets.length === 0 && (
-            <p className="text-center text-gray-400 mt-4 text-xs italic">
-              Aucun prêt en cours.
-            </p>
-          )}
-        </ul>
+                    {!isGuest && (
+                      <button
+                        onClick={() => handleDeletePret(p.id)}
+                        className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
+                        title="Supprimer ce prêt"
+                      >
+                        <CircleX size={18} />
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+              {filteredPrets.length === 0 && (
+                <p className="text-center text-gray-400 mt-4 text-xs italic">
+                  Aucun prêt en cours.
+                </p>
+              )}
+            </ul>
+          </>
+        )}
       </div>
 
       <ModalFormulaire
@@ -570,4 +580,6 @@ export default function WidgetPrets({
       </ModalFormulaire>
     </WidgetFrame>
   );
-}
+});
+
+export default WidgetPrets;

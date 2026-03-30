@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, memo } from "react";
 import WidgetFrame from "../WidgetFrame";
 import { AuthContext } from "../../context/AuthContext";
 import {
@@ -26,15 +26,16 @@ import EditableField from "../EditableField";
 const MAX_FILE_SIZE_MB = 5;
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:8080/";
 
-
-export default function WidgetImages({
-  widgetId, // 🚨 NOUVEAU : Identifiant unique du widget
+const WidgetImages = memo(function WidgetImages({
+  widgetId,
   onClose,
   isGuest,
+  isInteracting = false,
 }: {
   widgetId: string;
   onClose?: () => void;
   isGuest?: boolean;
+  isInteracting?: boolean;
 }) {
   const [images, setImages] = useState<ImageDTO[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,9 +46,7 @@ export default function WidgetImages({
   } | null>(null);
   const [erreur, setErreur] = useState("");
   const [refreshKey, setRefreshKey] = useState(Date.now());
-
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
   const [selectedImageId, setSelectedImageId] = useState<number | null>(null);
 
   const context = useContext(AuthContext);
@@ -174,6 +173,55 @@ export default function WidgetImages({
     }
   }
 
+  const filteredImages = images.filter((img) =>
+    (img.nom || "").toLowerCase().includes((searchTerm || "").toLowerCase()),
+  );
+
+  const headerActions = (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsSearchCollapsed((prev) => !prev)}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-white/40 bg-white/15 text-white hover:bg-white/25 transition-colors"
+        title={
+          isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"
+        }
+      >
+        {isSearchCollapsed ? (
+          <ChevronDown size={16} />
+        ) : (
+          <ChevronUp size={16} />
+        )}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setIsModalOpen(true)}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-white/30 bg-white/15 text-white hover:bg-white/25 transition-all"
+        title="Ajouter une image"
+      >
+        <CirclePlus size={18} />
+      </button>
+    </>
+  );
+
+  if (isInteracting) {
+    return (
+      <WidgetFrame
+        title="Images"
+        headerColor="bg-indigo-500 text-white border-b border-indigo-600"
+        onClose={onClose}
+      >
+        <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60 h-full bg-white">
+           <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-indigo-500 animate-spin" />
+           <p className="text-xs font-medium italic">Optimisation en cours...</p>
+        </div>
+      </WidgetFrame>
+    );
+  }
+
   if (selectedImageId) {
     const img = images.find((i) => i.id === selectedImageId);
     if (img) {
@@ -208,40 +256,6 @@ export default function WidgetImages({
       );
     }
   }
-
-  const filteredImages = images.filter((img) =>
-    (img.nom || "").toLowerCase().includes((searchTerm || "").toLowerCase()),
-  );
-
-  const headerActions = (
-    <>
-      <button
-        type="button"
-        onClick={() => setIsSearchCollapsed((prev) => !prev)}
-        onMouseDown={(e) => e.stopPropagation()}
-        className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-white/40 bg-white/15 text-white hover:bg-white/25 transition-colors"
-        title={
-          isSearchCollapsed ? "Déplier la recherche" : "Rétracter la recherche"
-        }
-      >
-        {isSearchCollapsed ? (
-          <ChevronDown size={16} />
-        ) : (
-          <ChevronUp size={16} />
-        )}
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setIsModalOpen(true)}
-        onMouseDown={(e) => e.stopPropagation()}
-        className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-white/30 bg-white/15 text-white hover:bg-white/25 transition-all"
-        title="Ajouter une image"
-      >
-        <CirclePlus size={18} />
-      </button>
-    </>
-  );
 
   return (
     <WidgetFrame
@@ -278,7 +292,7 @@ export default function WidgetImages({
               </p>
             </div>
           ) : (
-            <div className="flex flex-row gap-3 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-indigo-200 scrollbar-track-transparent">
+            <div className="flex flex-row flex-wrap gap-3 pb-2">
               {filteredImages.map((img) => {
                 const imageSrcBase = img.path?.startsWith("http")
                   ? img.path
@@ -370,4 +384,6 @@ export default function WidgetImages({
       </ModalFormulaire>
     </WidgetFrame>
   );
-}
+});
+
+export default WidgetImages;

@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, memo, useContext } from "react";
 import WidgetFrame from "../WidgetFrame";
-import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import {
   useAddMembreToTache,
@@ -37,12 +36,14 @@ import EditableField from "../EditableField";
 
 const COMPACT_LAYOUT_BREAKPOINT = 420;
 
-export default function WidgetTaches({
+const WidgetTaches = memo(function WidgetTaches({
   onClose,
   isGuest,
+  isInteracting = false,
 }: {
   onClose?: () => void;
   isGuest?: boolean;
+  isInteracting?: boolean;
 }) {
   const [taches, setTaches] = useState<TacheDTO[]>([]);
   const [membres, setMembres] = useState<Record<number, MembreDTO[]>>({});
@@ -392,262 +393,271 @@ export default function WidgetTaches({
       options={headerActions}
     >
       <div ref={widgetContainerRef} className="flex flex-col h-full p-3">
-        {erreur && (
-          <div className="mb-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md text-xs font-medium">
-            {erreur}
+        {isInteracting ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60">
+             <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
+             <p className="text-xs font-medium italic">Optimisation en cours...</p>
           </div>
-        )}
-        <div className="mb-3">
-          {!isSearchCollapsed && (
-            <input
-              type="text"
-              placeholder="Rechercher par nom, description, etat, date..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="border border-blue-200 bg-blue-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-200"
-            />
-          )}
-        </div>
+        ) : (
+          <>
+            {erreur && (
+              <div className="mb-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md text-xs font-medium">
+                {erreur}
+              </div>
+            )}
+            <div className="mb-3">
+              {!isSearchCollapsed && (
+                <input
+                  type="text"
+                  placeholder="Rechercher par nom, description, etat, date..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="border border-blue-200 bg-blue-50/60 text-slate-700 p-2 rounded-lg w-full min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                />
+              )}
+            </div>
 
-        <ul className="space-y-2 flex-1 overflow-y-auto">
-          {filteredTaches.map((tache) => (
-            <li
-              key={tache.id}
-              className={`${isCompactLayout ? "flex flex-col" : "grid grid-cols-[minmax(0,1fr)_9rem] items-start"} gap-3 p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 text-sm`}
-            >
-              <div className="flex flex-col flex-1 min-w-0 gap-1 overflow-hidden">
-                <div className={`flex flex-wrap font-semibold text-slate-800 items-center gap-1`}>
-                  <EditableField
-                    value={tache.nom}
-                    onSave={(newVal) => {
-                      handleUpdateField({ ...tache, nom: newVal });
-                    }}
-                    isGuest={isGuest || showMyTasksOnly}
-                    placeholder="Tâche"
-                    noWrap={false}
-                  />
-                  <span className="text-gray-300">|</span>
-                  <EditableField
-                    value={tache.description}
-                    isGuest={isGuest || showMyTasksOnly}
-                    placeholder="Description"
-                    onSave={(newVal) => {
-                      handleUpdateField({ ...tache, description: newVal });
-                    }}
-                    noWrap={false}
-                  />
-                </div>
-
-                <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
-                  <span className="text-gray-400">Période:</span>
-                  <EditableField
-                    value={tache.dateDebut}
-                    type="date"
-                    isGuest={isGuest || showMyTasksOnly}
-                    onSave={(newVal) => {
-                      handleUpdateField({ ...tache, dateDebut: formatDate(newVal) });
-                    }}
-                    placeholder="Début"
-                    noWrap={false}
-                  />
-                  <span className="text-gray-300">→</span>
-                  <EditableField
-                    value={tache.dateLimite}
-                    type="date"
-                    isGuest={isGuest || showMyTasksOnly}
-                    onSave={(newVal) => {
-                      handleUpdateField({ ...tache, dateLimite: formatDate(newVal) });
-                    }}
-                    placeholder="Fin"
-                    noWrap={false}
-                  />
-                </div>
-                {tache.mouvementId && (
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 text-slate-700 rounded-lg border border-slate-200 shadow-sm transition-all hover:bg-slate-100">
-                      <UserCircle size={14} className="text-slate-400" />
-                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Lié à :</span>
-                      <span className="text-xs font-bold text-slate-800">
-                        {(() => {
-                          const mouv = mouvements.find(m => m.id === tache.mouvementId);
-                          return mouv ? `${mouv.prenom} ${mouv.nom}` : `Mouvement #${tache.mouvementId}`;
-                        })()}
-                      </span>
+            <ul className="space-y-2 flex-1 overflow-y-auto">
+              {filteredTaches.map((tache) => (
+                <li
+                  key={tache.id}
+                  className={`${isCompactLayout ? "flex flex-col" : "grid grid-cols-[minmax(0,1fr)_9rem] items-start"} gap-3 p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 text-sm`}
+                >
+                  <div className="flex flex-col flex-1 min-w-0 gap-1 overflow-hidden">
+                    <div className={`flex flex-wrap font-semibold text-slate-800 items-center gap-1`}>
+                      <EditableField
+                        value={tache.nom}
+                        onSave={(newVal) => {
+                          handleUpdateField({ ...tache, nom: newVal });
+                        }}
+                        isGuest={isGuest || showMyTasksOnly}
+                        placeholder="Tâche"
+                        noWrap={false}
+                      />
+                      <span className="text-gray-300">|</span>
+                      <EditableField
+                        value={tache.description}
+                        isGuest={isGuest || showMyTasksOnly}
+                        placeholder="Description"
+                        onSave={(newVal) => {
+                          handleUpdateField({ ...tache, description: newVal });
+                        }}
+                        noWrap={false}
+                      />
                     </div>
 
-                    {(() => {
-                      const mouv = mouvements.find(m => m.id === (tache.mouvement?.id || tache.mouvementId));
-                      if (mouv?.urlTicketGlpi) {
-                        return (
-                          <a 
-                            href={mouv.urlTicketGlpi}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all shadow-sm hover:shadow-md active:scale-95 group"
-                            title="Ouvrir le Ticket GLPI du mouvement"
-                          >
-                            <Ticket size={12} className="group-hover:rotate-12 transition-transform" />
-                            Ticket GLPI
-                          </a>
-                        );
-                      }
-                      return null;
-                    })()}
-                  </div>
-                )}
-                <div className="text-[11px] text-gray-500 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-1">
-                  <span className="pt-0.5">Membres :</span>
-                  <div className="flex flex-wrap items-center gap-1 min-w-0">
-                    {tache.id !== undefined && membres[tache.id]?.length === 0 && (
-                      <span className="text-gray-400 italic">Aucun</span>
-                    )}
-                    {tache.id !== undefined &&
-                      membres[tache.id]?.map((membre: MembreDTO) => (
-                        <span
-                          className="flex items-center gap-1 bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full border border-blue-200 whitespace-nowrap max-w-full sm:max-w-40"
-                          key={membre.id}
-                          title={`${membre.nom} ${membre.prenom}`}
-                        >
-                          <span className="truncate">
-                            {membre.prenom.charAt(0)}. {membre.nom}
+                    <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
+    <span className="text-gray-400">Période:</span>
+    <EditableField
+      value={tache.dateDebut || ""}
+      type="date"
+      isGuest={isGuest || showMyTasksOnly}
+      onSave={(newVal) => {
+        handleUpdateField({ ...tache, dateDebut: formatDate(newVal) });
+      }}
+      placeholder="Début"
+      noWrap={false}
+    />
+    <span className="text-gray-300">→</span>
+    <EditableField
+      value={tache.dateLimite || ""}
+      type="date"
+      isGuest={isGuest || showMyTasksOnly}
+      onSave={(newVal) => {
+        handleUpdateField({ ...tache, dateLimite: formatDate(newVal) });
+      }}
+      placeholder="Fin"
+      noWrap={false}
+    />
+  </div>
+                    {tache.mouvementId && (
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 text-slate-700 rounded-lg border border-slate-200 shadow-sm transition-all hover:bg-slate-100">
+                          <UserCircle size={14} className="text-slate-400" />
+                          <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Lié à :</span>
+                          <span className="text-xs font-bold text-slate-800">
+                            {(() => {
+                              const mouv = mouvements.find(m => m.id === tache.mouvementId);
+                              return mouv ? `${mouv.prenom} ${mouv.nom}` : `Mouvement #${tache.mouvementId}`;
+                            })()}
                           </span>
-                          {!isGuest && !showMyTasksOnly && (
-                            <button
-                              onClick={() =>
-                                handleRemoveMembre(
-                                  tache.id as number,
-                                  membre.id as number,
-                                )
-                              }
-                              className="hover:text-red-600 hover:bg-red-100 text-red-500 rounded-full p-0.5 transition-colors ml-1 shrink-0"
+                        </div>
+
+                        {(() => {
+                          const mouv = mouvements.find(m => m.id === (tache.mouvement?.id || tache.mouvementId));
+                          if (mouv?.urlTicketGlpi) {
+                            return (
+                              <a 
+                                href={mouv.urlTicketGlpi}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all shadow-sm hover:shadow-md active:scale-95 group"
+                                title="Ouvrir le Ticket GLPI du mouvement"
+                              >
+                                <Ticket size={12} className="group-hover:rotate-12 transition-transform" />
+                                Ticket GLPI
+                              </a>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    )}
+                    <div className="text-[11px] text-gray-500 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-1">
+                      <span className="pt-0.5">Membres :</span>
+                      <div className="flex flex-wrap items-center gap-1 min-w-0">
+                        {tache.id !== undefined && membres[tache.id]?.length === 0 && (
+                          <span className="text-gray-400 italic">Aucun</span>
+                        )}
+                        {tache.id !== undefined &&
+                          membres[tache.id]?.map((membre: MembreDTO) => (
+                            <span
+                              className="flex items-center gap-1 bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full border border-blue-200 whitespace-nowrap max-w-full sm:max-w-40"
+                              key={membre.id}
+                              title={`${membre.nom} ${membre.prenom}`}
                             >
-                              <UserRoundX size={10} />
-                            </button>
-                          )}
-                        </span>
-                      ))}
-                    {!isGuest && !showMyTasksOnly && (
-                      <div className="relative" ref={addingMembreForTacheId === tache.id ? inlineDropdownRef : null}>
-                        <button
-                          onClick={() => {
-                            if (addingMembreForTacheId === tache.id) {
-                              setAddingMembreForTacheId(null);
-                              setInlineSearchTerm("");
-                            } else {
-                              setAddingMembreForTacheId(tache.id as number);
-                              setInlineSearchTerm("");
-                            }
-                          }}
-                          className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
-                          title="Ajouter un membre"
-                        >
-                          <CirclePlus size={12} />
-                        </button>
-                        {addingMembreForTacheId === tache.id && (
-                          <div className="absolute z-50 left-0 top-5 w-44 bg-white border border-slate-200 rounded-lg shadow-lg text-xs">
-                            <input
-                              autoFocus
-                              type="text"
-                              placeholder="Rechercher..."
-                              value={inlineSearchTerm}
-                              onChange={(e) => setInlineSearchTerm(e.target.value)}
-                              className="w-full px-2 py-1.5 border-b border-slate-100 outline-none rounded-t-lg"
-                            />
-                            <div className="max-h-28 overflow-y-auto">
-                              {membresGroupe
-                                .filter((m) => {
-                                  const alreadyIn = membres[tache.id as number]?.some((am) => am.id === m.id);
-                                  const matchSearch = `${m.nom} ${m.prenom}`.toLowerCase().includes(inlineSearchTerm.toLowerCase());
-                                  return !alreadyIn && matchSearch;
-                                })
-                                .map((m) => (
-                                  <div
-                                    key={m.id}
-                                    onClick={() => handleAddMembreInline(tache.id as number, m.id as number)}
-                                    className="px-2 py-1.5 hover:bg-blue-50 cursor-pointer text-slate-700 border-b border-slate-50 last:border-0"
-                                  >
-                                    {m.prenom} {m.nom}
-                                  </div>
-                                ))}
-                              {membresGroupe.filter((m) => {
-                                const alreadyIn = membres[tache.id as number]?.some((am) => am.id === m.id);
-                                const matchSearch = `${m.nom} ${m.prenom}`.toLowerCase().includes(inlineSearchTerm.toLowerCase());
-                                return !alreadyIn && matchSearch;
-                              }).length === 0 && (
-                                <p className="px-2 py-2 text-gray-400 italic text-center">Aucun membre disponible</p>
+                              <span className="truncate">
+                                {membre.prenom.charAt(0)}. {membre.nom}
+                              </span>
+                              {!isGuest && !showMyTasksOnly && (
+                                <button
+                                  onClick={() =>
+                                    handleRemoveMembre(
+                                      tache.id as number,
+                                      membre.id as number,
+                                    )
+                                  }
+                                  className="hover:text-red-600 hover:bg-red-100 text-red-500 rounded-full p-0.5 transition-colors ml-1 shrink-0"
+                                >
+                                  <UserRoundX size={10} />
+                                </button>
                               )}
-                            </div>
+                            </span>
+                          ))}
+                        {!isGuest && !showMyTasksOnly && (
+                          <div className="relative" ref={addingMembreForTacheId === tache.id ? inlineDropdownRef : null}>
+                            <button
+                              onClick={() => {
+                                if (addingMembreForTacheId === tache.id) {
+                                  setAddingMembreForTacheId(null);
+                                  setInlineSearchTerm("");
+                                } else {
+                                  setAddingMembreForTacheId(tache.id as number);
+                                  setInlineSearchTerm("");
+                                }
+                              }}
+                              className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                              title="Ajouter un membre"
+                            >
+                              <CirclePlus size={12} />
+                            </button>
+                            {addingMembreForTacheId === tache.id && (
+                              <div className="absolute z-50 left-0 top-5 w-44 bg-white border border-slate-200 rounded-lg shadow-lg text-xs">
+                                <input
+                                  autoFocus
+                                  type="text"
+                                  placeholder="Rechercher..."
+                                  value={inlineSearchTerm}
+                                  onChange={(e) => setInlineSearchTerm(e.target.value)}
+                                  className="w-full px-2 py-1.5 border-b border-slate-100 outline-none rounded-t-lg"
+                                />
+                                <div className="max-h-28 overflow-y-auto">
+                                  {membresGroupe
+                                    .filter((m) => {
+                                      const alreadyIn = membres[tache.id as number]?.some((am) => am.id === m.id);
+                                      const matchSearch = `${m.nom} ${m.prenom}`.toLowerCase().includes(inlineSearchTerm.toLowerCase());
+                                      return !alreadyIn && matchSearch;
+                                    })
+                                    .map((m) => (
+                                      <div
+                                        key={m.id}
+                                        onClick={() => handleAddMembreInline(tache.id as number, m.id as number)}
+                                        className="px-2 py-1.5 hover:bg-blue-50 cursor-pointer text-slate-700 border-b border-slate-50 last:border-0"
+                                      >
+                                        {m.prenom} {m.nom}
+                                      </div>
+                                    ))}
+                                  {membresGroupe.filter((m) => {
+                                    const alreadyIn = membres[tache.id as number]?.some((am) => am.id === m.id);
+                                    const matchSearch = `${m.nom} ${m.prenom}`.toLowerCase().includes(inlineSearchTerm.toLowerCase());
+                                    return !alreadyIn && matchSearch;
+                                  }).length === 0 && (
+                                    <p className="px-2 py-2 text-gray-400 italic text-center">Aucun membre disponible</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
+                    </div>
+                  </div>
+
+                  <div className={`flex ${isCompactLayout ? "w-full flex-row items-center justify-end mt-2" : "w-full flex-col items-end"} gap-2`}>
+                    {!isGuest && !showMyTasksOnly && (
+                      <div className={`${isCompactLayout ? "w-full" : "w-full"} mt-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-2 group hover:border-blue-300 transition-colors`}>
+                        <Link size={12} className="text-slate-400 group-hover:text-blue-500" />
+                        <select
+                          className="bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full cursor-pointer"
+                          value={tache.mouvement?.id || tache.mouvementId || ""}
+                          onChange={async (e) => {
+                            const newMouvId = e.target.value === "" ? null : Number(e.target.value);
+                            const updatedTache = { 
+                              ...tache, 
+                              mouvement: newMouvId ? { id: newMouvId } : null,
+                              mouvementId: newMouvId 
+                            } as TacheDTO;
+                            await handleUpdateField(updatedTache);
+                          }}
+                        >
+                          <option value="">-- Relier à --</option>
+                          {mouvements.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.nom} {m.prenom}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {!isGuest && !showMyTasksOnly ? (
+                      <select
+                        className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-xs p-1.5 rounded-lg border border-blue-200 outline-none bg-blue-50 text-blue-800`}
+                        value={tache.etat}
+                        onChange={async (e) => {
+                          if (tache.id !== undefined) {
+                            await updateEtatTache(tache.id, e.target.value);
+                            await refreshData();
+                          }
+                        }}
+                      >
+                        {etats.map((etat) => (
+                          <option key={etat} value={etat}>
+                            {etat.replace("_", " ").toLowerCase()}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-full font-medium`}>
+                        {tache.etat.replace("_", " ").toLowerCase()}
+                      </p>
+                    )}
+
+                    {!isGuest && !showMyTasksOnly && (
+                      <button
+                        onClick={() => handleDeleteTache(tache.id as number)}
+                        className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
+                        title="Supprimer la tâche"
+                      >
+                        <CircleX size={18} />
+                      </button>
                     )}
                   </div>
-                </div>
-              </div>
-
-              <div className={`flex ${isCompactLayout ? "w-full flex-row items-center justify-end mt-2" : "w-full flex-col items-end"} gap-2`}>
-                {!isGuest && !showMyTasksOnly && (
-                  <div className={`${isCompactLayout ? "w-full" : "w-full"} mt-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-2 group hover:border-blue-300 transition-colors`}>
-                    <Link size={12} className="text-slate-400 group-hover:text-blue-500" />
-                    <select
-                      className="bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full cursor-pointer"
-                      value={tache.mouvement?.id || tache.mouvementId || ""}
-                      onChange={async (e) => {
-                        const newMouvId = e.target.value === "" ? null : Number(e.target.value);
-                        const updatedTache = { 
-                          ...tache, 
-                          mouvement: newMouvId ? { id: newMouvId } : null,
-                          mouvementId: newMouvId 
-                        } as TacheDTO;
-                        await handleUpdateField(updatedTache);
-                      }}
-                    >
-                      <option value="">-- Relier à --</option>
-                      {mouvements.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.nom} {m.prenom}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {!isGuest && !showMyTasksOnly ? (
-                  <select
-                    className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-xs p-1.5 rounded-lg border border-blue-200 outline-none bg-blue-50 text-blue-800`}
-                    value={tache.etat}
-                    onChange={async (e) => {
-                      if (tache.id !== undefined) {
-                        await updateEtatTache(tache.id, e.target.value);
-                        await refreshData();
-                      }
-                    }}
-                  >
-                    {etats.map((etat) => (
-                      <option key={etat} value={etat}>
-                        {etat.replace("_", " ").toLowerCase()}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-full font-medium`}>
-                    {tache.etat.replace("_", " ").toLowerCase()}
-                  </p>
-                )}
-
-                {!isGuest && !showMyTasksOnly && (
-                  <button
-                    onClick={() => handleDeleteTache(tache.id as number)}
-                    className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
-                    title="Supprimer la tâche"
-                  >
-                    <CircleX size={18} />
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </div>
 
       <ModalFormulaire
@@ -794,4 +804,6 @@ export default function WidgetTaches({
       </ModalFormulaire>
     </WidgetFrame>
   );
-}
+});
+
+export default WidgetTaches;

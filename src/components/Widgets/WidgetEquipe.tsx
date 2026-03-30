@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, memo } from "react";
 import WidgetFrame from "../WidgetFrame";
 import { AuthContext } from "../../context/AuthContext";
 import { Client } from "@stomp/stompjs";
@@ -8,7 +8,14 @@ import { ROLE_ADMIN, ROLE_INVITE, ROLE_MEMBRE } from "../../services/apiConfig";
 import { useGetUsersByRoleGroupe } from "../../services/groupeService";
 import { ShieldCheck, Users, UserPlus } from "lucide-react";
 
-export default function WidgetEquipe({ onClose }: { onClose?: () => void; isGuest?: boolean }) {
+const WidgetEquipe = memo(function WidgetEquipe({ 
+  onClose,
+  isInteracting = false 
+}: { 
+  onClose?: () => void; 
+  isGuest?: boolean;
+  isInteracting?: boolean;
+}) {
   const [membres, setMembres] = useState<MembreDTO[]>([]);
   const [admins, setAdmins] = useState<MembreDTO[]>([]);
   const [guests, setGuests] = useState<MembreDTO[]>([]);
@@ -93,83 +100,94 @@ export default function WidgetEquipe({ onClose }: { onClose?: () => void; isGues
       onClose={onClose}
     >
       <div className="flex flex-col h-full overflow-y-auto p-3 space-y-6 custom-scrollbar">
-        {admins.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <ShieldCheck className="text-indigo-500" size={18} />
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Administrateurs</h3>
-              <span className="ml-auto bg-indigo-100 text-indigo-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                {admins.length}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              {admins.map((admin) => (
-                <MemberCard 
-                  key={admin.id} 
-                  member={admin} 
-                  icon={<ShieldCheck size={10} />}
-                  colorClass="text-indigo-600"
-                  bgColorClass="bg-indigo-100"
-                  borderColorClass="border-indigo-100"
-                />
-              ))}
-            </div>
+        {isInteracting ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60">
+             <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-indigo-500 animate-spin" />
+             <p className="text-xs font-medium italic">Optimisation en cours...</p>
           </div>
-        )}
+        ) : (
+          <>
+            {admins.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-1">
+                  <ShieldCheck className="text-indigo-500" size={18} />
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Administrateurs</h3>
+                  <span className="ml-auto bg-indigo-100 text-indigo-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {admins.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {admins.map((admin) => (
+                    <MemberCard 
+                      key={admin.id} 
+                      member={admin} 
+                      icon={<ShieldCheck size={10} />}
+                      colorClass="text-indigo-600"
+                      bgColorClass="bg-indigo-100"
+                      borderColorClass="border-indigo-100"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
-        {membres.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <Users className="text-blue-500" size={18} />
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Membres</h3>
-              <span className="ml-auto bg-blue-100 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                {membres.length}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              {membres.map((membre) => (
-                <MemberCard 
-                  key={membre.id} 
-                  member={membre} 
-                  icon={<Users size={10} />}
-                  colorClass="text-blue-600"
-                  bgColorClass="bg-blue-100"
-                  borderColorClass="border-blue-100"
-                />
-              ))}
-            </div>
-          </div>
-        )}
-        {guests.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <UserPlus className="text-slate-400" size={18} />
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Invités</h3>
-              <span className="ml-auto bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                {guests.length}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              {guests.map((guest) => (
-                <MemberCard 
-                  key={guest.id} 
-                  member={guest} 
-                  icon={<UserPlus size={10} />}
-                  colorClass="text-slate-500"
-                  bgColorClass="bg-slate-100"
-                  borderColorClass="border-slate-200"
-                />
-              ))}
-            </div>
-          </div>
-        )}
-        {admins.length === 0 && membres.length === 0 && guests.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full py-10 text-slate-400">
-            <Users size={48} className="opacity-20 mb-2" />
-            <p className="text-xs italic">Aucun membre dans cette équipe</p>
-          </div>
+            {membres.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-1">
+                  <Users className="text-blue-500" size={18} />
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Membres</h3>
+                  <span className="ml-auto bg-blue-100 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {membres.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {membres.map((membre) => (
+                    <MemberCard 
+                      key={membre.id} 
+                      member={membre} 
+                      icon={<Users size={10} />}
+                      colorClass="text-blue-600"
+                      bgColorClass="bg-blue-100"
+                      borderColorClass="border-blue-100"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {guests.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-1">
+                  <UserPlus className="text-slate-400" size={18} />
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Invités</h3>
+                  <span className="ml-auto bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {guests.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {guests.map((guest) => (
+                    <MemberCard 
+                      key={guest.id} 
+                      member={guest} 
+                      icon={<UserPlus size={10} />}
+                      colorClass="text-slate-500"
+                      bgColorClass="bg-slate-100"
+                      borderColorClass="border-slate-200"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {admins.length === 0 && membres.length === 0 && guests.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full py-10 text-slate-400">
+                <Users size={48} className="opacity-20 mb-2" />
+                <p className="text-xs italic">Aucun membre dans cette équipe</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </WidgetFrame>
   );
-}
+});
+
+export default WidgetEquipe;

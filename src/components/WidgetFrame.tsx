@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { X } from "lucide-react";
 
 interface WidgetFrameProps {
@@ -9,7 +9,7 @@ interface WidgetFrameProps {
   options?: ReactNode;
 }
 
-export default function WidgetFrame({
+const WidgetFrame = memo(function WidgetFrame({
   title,
   children,
   onClose,
@@ -17,7 +17,10 @@ export default function WidgetFrame({
   options,
 }: WidgetFrameProps) {
   return (
-    <div className="widget-frame flex flex-col h-full min-w-0 min-h-[180px] bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+    <div 
+      className="widget-frame flex flex-col h-full min-w-0 min-h-[180px] bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden"
+      style={{ contain: 'content', willChange: 'transform' }}
+    >
       <div
         className={`${headerColor} px-4 py-2.5 text-sm font-semibold flex items-center gap-3 cursor-move drag-handle`}
       >
@@ -38,4 +41,6 @@ export default function WidgetFrame({
       <div className="widget-body flex-1 min-h-0 overflow-hidden bg-white">{children}</div>
     </div>
   );
-}
+});
+
+export default WidgetFrame;

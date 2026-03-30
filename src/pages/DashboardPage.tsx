@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState, useRef, useMemo, memo } from "react";
+import { useCallback, useContext, useEffect, useState, useRef, useMemo } from "react";
 import { AuthContext } from "../context/AuthContext";
 import SelectGroupe from "../components/SelectGroupe";
 import { ButtonAdminGroupe } from "../components/ButtonAdminGroupe";
@@ -35,7 +35,6 @@ import WidgetEquipe from "../components/Widgets/WidgetEquipe";
 import type { Configuration } from "../types/Configuration";
 
 const ReactGridLayout = WidthProvider(RGL);
-const MemoWidgetImages = memo(WidgetImages);
 
 const WIDGETS_SINGLETONS: string[] = [
   "Taches",
@@ -71,7 +70,10 @@ export default function DashboardPage() {
   const loadedConfigId = useRef<number | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [isInteracting, setIsInteracting] = useState(false);
+
   const toggleGridInteractionClass = useCallback((active: boolean) => {
+    setIsInteracting(active);
     document.body.classList.toggle("widget-interacting", active);
   }, []);
 
@@ -294,12 +296,12 @@ export default function DashboardPage() {
     });
   }, [SaveLayoutBD]);
 
-  const widgetTaches = useMemo(() => <WidgetTaches onClose={() => handleRemoveWidget("Taches")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
-  const widgetNotes = useMemo(() => <WidgetNotes onClose={() => handleRemoveWidget("Notes")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
-  const widgetAchats = useMemo(() => <WidgetAchats onClose={() => handleRemoveWidget("Achats")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
-  const widgetPrets = useMemo(() => <WidgetPrets onClose={() => handleRemoveWidget("Prets")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
-  const widgetMouvement = useMemo(() => <WidgetMouvements onClose={() => handleRemoveWidget("Mouvements")} isGuest={isGuest} />, [isGuest, handleRemoveWidget]);
-  const widgetEquipe = useMemo(() => <WidgetEquipe onClose={() => handleRemoveWidget("Equipe")} />, [handleRemoveWidget]);
+  const widgetTaches = useMemo(() => <WidgetTaches onClose={() => handleRemoveWidget("Taches")} isGuest={isGuest} isInteracting={isInteracting} />, [isGuest, handleRemoveWidget, isInteracting]);
+  const widgetNotes = useMemo(() => <WidgetNotes onClose={() => handleRemoveWidget("Notes")} isGuest={isGuest} isInteracting={isInteracting} />, [isGuest, handleRemoveWidget, isInteracting]);
+  const widgetAchats = useMemo(() => <WidgetAchats onClose={() => handleRemoveWidget("Achats")} isGuest={isGuest} isInteracting={isInteracting} />, [isGuest, handleRemoveWidget, isInteracting]);
+  const widgetPrets = useMemo(() => <WidgetPrets onClose={() => handleRemoveWidget("Prets")} isGuest={isGuest} isInteracting={isInteracting} />, [isGuest, handleRemoveWidget, isInteracting]);
+  const widgetMouvement = useMemo(() => <WidgetMouvements onClose={() => handleRemoveWidget("Mouvements")} isGuest={isGuest} isInteracting={isInteracting} />, [isGuest, handleRemoveWidget, isInteracting]);
+  const widgetEquipe = useMemo(() => <WidgetEquipe onClose={() => handleRemoveWidget("Equipe")} isInteracting={isInteracting} />, [handleRemoveWidget, isInteracting]);
 
   useEffect(() => {
     RefreshConfig();
@@ -494,10 +496,11 @@ export default function DashboardPage() {
                 {item.i === "Mouvements" && widgetMouvement}
                 {item.i === "Equipe" && widgetEquipe}
                 {item.i.startsWith("Image-") && (
-                  <MemoWidgetImages
+                  <WidgetImages
                     widgetId={item.i}
                     onClose={() => handleRemoveWidget(item.i)}
                     isGuest={isGuest}
+                    isInteracting={isInteracting}
                   />
                 )} 
               </div>
