@@ -15,6 +15,7 @@ import {
   useUpdateTache,
   type TacheDTO,
 } from "../../services/tacheService";
+import { useGetMouvementGroupe, type MouvementDTO } from "../../services/mouvementService";
 import { type MembreDTO } from "../../services/userService";
 import { useGetConfig } from "../../services/configService";
 import { Client } from "@stomp/stompjs";
@@ -27,6 +28,9 @@ import {
   ChevronUp,
   ChevronDown,
   CirclePlus,
+  Link,
+  Ticket,
+  UserCircle,
 } from "lucide-react";
 import { useGetUserByGroupe } from "../../services/groupeService";
 import EditableField from "../EditableField";
@@ -58,6 +62,8 @@ export default function WidgetTaches({
   const [isCompactLayout, setIsCompactLayout] = useState(false);
   const [configLimits, setConfigLimits] = useState<{ maxTaches?: number } | null>(null);
   const [erreur, setErreur] = useState("");
+  const [mouvements, setMouvements] = useState<MouvementDTO[]>([]);
+  const [selectedMouvementId, setSelectedMouvementId] = useState<number | "">("");
   const [addingMembreForTacheId, setAddingMembreForTacheId] = useState<number | null>(null);
   const [inlineSearchTerm, setInlineSearchTerm] = useState("");
   const showMyTasksRef = useRef(showMyTasksOnly);
@@ -77,6 +83,7 @@ export default function WidgetTaches({
   const GetUsersbyGroupe = useGetUserByGroupe();
   const UpdateTache = useUpdateTache();
   const getConfig = useGetConfig();
+  const getMouvementGroupe = useGetMouvementGroupe();
 
   useEffect(() => {
     showMyTasksRef.current = showMyTasksOnly;
@@ -152,6 +159,7 @@ export default function WidgetTaches({
       dateLimite: dateFin || null,
       etat: etat,
       membresIds: selectedMembresIds,
+      mouvement: selectedMouvementId === "" ? null : { id: Number(selectedMouvementId) } as any,
     };
 
     const newTache = await addTache(data);
@@ -174,6 +182,7 @@ export default function WidgetTaches({
     setDateFin("");
     setSelectedMembresIds([]);
     setSearchTermAdd("");
+    setSelectedMouvementId("");
     if (etats.length > 0) setEtat(etats[0]);
   };
 
@@ -189,8 +198,18 @@ export default function WidgetTaches({
 
   const handleUpdateField = async (tache: TacheDTO) => {
     if (isGuest) return;
-    await UpdateTache(tache);
-    refreshData();
+    
+    // Optimistic Update: Update the local state immediately
+    setTaches(prev => prev.map(t => t.id === tache.id ? tache : t));
+    
+    try {
+      await UpdateTache(tache);
+      await refreshData();
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de la tâche", error);
+      // Rollback if needed
+      await refreshData();
+    }
   };
 
   const handleAddMembreInline = async (tacheId: number, membreId: number) => {
@@ -239,7 +258,19 @@ export default function WidgetTaches({
       }
     };
     fetchEtats();
-  }, []);
+  }, [GetEtatTache, etat]);
+
+  useEffect(() => {
+    const fetchMouvements = async () => {
+      try {
+        const result = await getMouvementGroupe();
+        setMouvements(result || []);
+      } catch (error) {
+        console.error("Erreur récupération mouvements", error);
+      }
+    };
+    fetchMouvements();
+  }, [getMouvementGroupe]);
 
   async function refreshData() {
     if (!context?.groupeActifId) return;
@@ -388,10 +419,9 @@ export default function WidgetTaches({
                 <div className={`flex flex-wrap font-semibold text-slate-800 items-center gap-1`}>
                   <EditableField
                     value={tache.nom}
-                    onSave={(newVal) => (
-                      (tache.nom = newVal),
-                      handleUpdateField(tache)
-                    )}
+                    onSave={(newVal) => {
+                      handleUpdateField({ ...tache, nom: newVal });
+                    }}
                     isGuest={isGuest || showMyTasksOnly}
                     placeholder="Tâche"
                     noWrap={false}
@@ -402,8 +432,7 @@ export default function WidgetTaches({
                     isGuest={isGuest || showMyTasksOnly}
                     placeholder="Description"
                     onSave={(newVal) => {
-                      tache.description = newVal;
-                      handleUpdateField(tache);
+                      handleUpdateField({ ...tache, description: newVal });
                     }}
                     noWrap={false}
                   />
@@ -416,8 +445,7 @@ export default function WidgetTaches({
                     type="date"
                     isGuest={isGuest || showMyTasksOnly}
                     onSave={(newVal) => {
-                      tache.dateDebut = formatDate(newVal);
-                      handleUpdateField(tache);
+                      handleUpdateField({ ...tache, dateDebut: formatDate(newVal) });
                     }}
                     placeholder="Début"
                     noWrap={false}
@@ -428,14 +456,45 @@ export default function WidgetTaches({
                     type="date"
                     isGuest={isGuest || showMyTasksOnly}
                     onSave={(newVal) => {
-                      tache.dateLimite = formatDate(newVal);
-                      handleUpdateField(tache);
+                      handleUpdateField({ ...tache, dateLimite: formatDate(newVal) });
                     }}
                     placeholder="Fin"
                     noWrap={false}
                   />
                 </div>
+                {tache.mouvementId && (
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 text-slate-700 rounded-lg border border-slate-200 shadow-sm transition-all hover:bg-slate-100">
+                      <UserCircle size={14} className="text-slate-400" />
+                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Lié à :</span>
+                      <span className="text-xs font-bold text-slate-800">
+                        {(() => {
+                          const mouv = mouvements.find(m => m.id === tache.mouvementId);
+                          return mouv ? `${mouv.prenom} ${mouv.nom}` : `Mouvement #${tache.mouvementId}`;
+                        })()}
+                      </span>
+                    </div>
 
+                    {(() => {
+                      const mouv = mouvements.find(m => m.id === (tache.mouvement?.id || tache.mouvementId));
+                      if (mouv?.urlTicketGlpi) {
+                        return (
+                          <a 
+                            href={mouv.urlTicketGlpi}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all shadow-sm hover:shadow-md active:scale-95 group"
+                            title="Ouvrir le Ticket GLPI du mouvement"
+                          >
+                            <Ticket size={12} className="group-hover:rotate-12 transition-transform" />
+                            Ticket GLPI
+                          </a>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                )}
                 <div className="text-[11px] text-gray-500 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-1">
                   <span className="pt-0.5">Membres :</span>
                   <div className="flex flex-wrap items-center gap-1 min-w-0">
@@ -527,28 +586,54 @@ export default function WidgetTaches({
               </div>
 
               <div className={`flex ${isCompactLayout ? "w-full flex-row items-center justify-end mt-2" : "w-full flex-col items-end"} gap-2`}>
-                  {!isGuest && !showMyTasksOnly ? (
+                {!isGuest && !showMyTasksOnly && (
+                  <div className={`${isCompactLayout ? "w-full" : "w-full"} mt-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-2 group hover:border-blue-300 transition-colors`}>
+                    <Link size={12} className="text-slate-400 group-hover:text-blue-500" />
                     <select
-                      className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-xs p-1.5 rounded-lg border border-blue-200 outline-none bg-blue-50 text-blue-800`}
-                      value={tache.etat}
+                      className="bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full cursor-pointer"
+                      value={tache.mouvement?.id || tache.mouvementId || ""}
                       onChange={async (e) => {
-                        if (tache.id !== undefined) {
-                          await updateEtatTache(tache.id, e.target.value);
-                          await refreshData();
-                        }
+                        const newMouvId = e.target.value === "" ? null : Number(e.target.value);
+                        const updatedTache = { 
+                          ...tache, 
+                          mouvement: newMouvId ? { id: newMouvId } : null,
+                          mouvementId: newMouvId 
+                        } as TacheDTO;
+                        await handleUpdateField(updatedTache);
                       }}
                     >
-                      {etats.map((etat) => (
-                        <option key={etat} value={etat}>
-                          {etat.replace("_", " ").toLowerCase()}
+                      <option value="">-- Relier à --</option>
+                      {mouvements.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.nom} {m.prenom}
                         </option>
                       ))}
                     </select>
-                  ) : (
-                    <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-full font-medium`}>
-                      {tache.etat.replace("_", " ").toLowerCase()}
-                    </p>
-                  )}
+                  </div>
+                )}
+
+                {!isGuest && !showMyTasksOnly ? (
+                  <select
+                    className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-xs p-1.5 rounded-lg border border-blue-200 outline-none bg-blue-50 text-blue-800`}
+                    value={tache.etat}
+                    onChange={async (e) => {
+                      if (tache.id !== undefined) {
+                        await updateEtatTache(tache.id, e.target.value);
+                        await refreshData();
+                      }
+                    }}
+                  >
+                    {etats.map((etat) => (
+                      <option key={etat} value={etat}>
+                        {etat.replace("_", " ").toLowerCase()}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-full font-medium`}>
+                    {tache.etat.replace("_", " ").toLowerCase()}
+                  </p>
+                )}
 
                 {!isGuest && !showMyTasksOnly && (
                   <button
@@ -633,6 +718,24 @@ export default function WidgetTaches({
               {etats.map((etat) => (
                 <option key={etat} value={etat}>
                   {etat.replace("_", " ").toLowerCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Relier à un mouvement (Optionnel)
+            </label>
+            <select
+              className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500 text-sm"
+              value={selectedMouvementId}
+              onChange={(e) => setSelectedMouvementId(e.target.value === "" ? "" : Number(e.target.value))}
+            >
+              <option value="">-- Aucune liaison --</option>
+              {mouvements.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nom} {m.prenom}
                 </option>
               ))}
             </select>

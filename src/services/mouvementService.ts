@@ -9,6 +9,10 @@ export interface MouvementDTO {
   dateArrivee: string;
   dateDepart: string;
   etat: string;
+  service?: string;
+  statut?: string;
+  urlTicketGlpi?: string;
+  version?: number;
 }
 
 export interface EtatMouvementDTO {

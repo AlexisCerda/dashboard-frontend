@@ -32,7 +32,7 @@ function App() {
   const [user, setUser] = useState<User>();
   useEffect(() => {
     const fetchUser = async () => {
-      if (context?.auth.idUser) {
+      if (context?.auth.idUser && context.isLogged) {
         const user = await GetUser();
         setUser(user);
       }
@@ -54,7 +54,7 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <DashboardPage />
+                <DashboardPage/>
               </ProtectedRoute>
             }
           />

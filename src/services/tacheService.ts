@@ -10,6 +10,8 @@ export interface TacheDTO {
   dateLimite: string | null;
   etat: string;
   membresIds?: number[];
+  mouvement?: import("./mouvementService").MouvementDTO | null;
+  mouvementId?: number | null;
 }
 
 export interface EtatTacheDTO {

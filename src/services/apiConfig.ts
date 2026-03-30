@@ -38,7 +38,7 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
 
   const response = await fetch(url, { ...options, headers });
 
-  if ((response.status === 401 || response.status === 403) && !endpoint.includes("/auth/")) {
+  if ((response.status === 401 || response.status === 403 || response.status === 500) && !endpoint.includes("/auth/")) {
     console.warn("Token expiré ou invalide. Déconnexion automatique.");
     
     localStorage.removeItem("sidsic_token");

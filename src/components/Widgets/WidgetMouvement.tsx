@@ -8,25 +8,19 @@ import {
   useGetAllEtatsMouvement, 
   useGetMouvementGroupe, 
   useUpdateEtatMouvement, 
-  useUpdateMouvement, 
+  useUpdateMouvement,
+  type MouvementDTO,
 } from "../../services/mouvementService";
 import { useGetConfig } from "../../services/configService";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import ModalFormulaire from "../ModalFormulaire";
-import { CircleX, ChevronUp, ChevronDown, CirclePlus, LogIn, LogOut } from "lucide-react"; 
+import { CircleX, ChevronUp, ChevronDown, CirclePlus, LogIn, LogOut, Ticket, Building2, UserCircle } from "lucide-react"; 
 import EditableField from "../EditableField";
 
 const COMPACT_LAYOUT_BREAKPOINT = 360;
 
-export interface MouvementDTO {
-  id: number;
-  nom: string;
-  prenom: string;
-  dateArrivee: string;
-  dateDepart: string;  
-  etat : string; 
-}
+
 
 export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () => void; isGuest?: boolean }) {
   const [mouvements, setMouvements] = useState<MouvementDTO[]>([]);
@@ -38,6 +32,9 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
   const [dateArrivee, setDateArrivee] = useState("");
   const [dateDepart, setDateDepart] = useState("");
   const [etat, setEtat] = useState("");
+  const [service, setService] = useState("");
+  const [statut, setStatut] = useState("");
+  const [urlTicketGlpi, setUrlTicketGlpi] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
   const [isCompactLayout, setIsCompactLayout] = useState(false);
@@ -80,6 +77,9 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
       setDateArrivee("");
       setDateDepart("");
       setEtat("");
+      setService("");
+      setStatut("");
+      setUrlTicketGlpi("");
       return;
     }
     
@@ -90,6 +90,9 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
       dateArrivee: dateArrivee || null as any,
       dateDepart: dateDepart || null as any,
       etat : etat,
+      service: service || null as any,
+      statut: statut || null as any,
+      urlTicketGlpi: urlTicketGlpi || null as any,
     };
 
     await createMouvement(data);
@@ -101,6 +104,9 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
     setPrenom("");
     setDateArrivee("");
     setDateDepart("");
+    setService("");
+    setStatut("");
+    setUrlTicketGlpi("");
     if (etats.length > 0) setEtat(etats[0]);
   };
 
@@ -109,10 +115,35 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
     refreshData();
   };
 
+  const [updateError, setUpdateError] = useState<string | null>(null);
+
   const handleUpdateField = async (mouvement: MouvementDTO) => {
     if (isGuest) return;
-    await updateMouvement(mouvement);
-    refreshData();
+    setUpdateError(null);
+    
+    // Optimistic Update: Update the local state immediately
+    if (mouvement.id) {
+      setMouvements(prev => prev.map(m => m.id === mouvement.id ? mouvement : m));
+    }
+    
+    try {
+      // Ensure empty fields are sent as null for consistency with backend
+      const payload: MouvementDTO = {
+        ...mouvement,
+        service: mouvement.service || null as any,
+        statut: mouvement.statut || null as any,
+        urlTicketGlpi: mouvement.urlTicketGlpi || null as any
+      };
+      
+      await updateMouvement(payload);
+      await refreshData();
+    } catch (error: any) {
+      console.error("Erreur mise à jour mouvement:", error);
+      setUpdateError(`Échec de la sauvegarde: ${error.message || "Erreur serveur"}`);
+      await refreshData();
+      // Clear error after 3 seconds
+      setTimeout(() => setUpdateError(null), 3000);
+    }
   };
 
   useEffect(() => {
@@ -193,7 +224,7 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
   }
 
   const filteredMouvements = mouvements.filter((m) => {
-    const searchString = `${m.nom} ${m.prenom} ${m.etat?.replace("_", " ")} ${m.dateArrivee} ${m.dateDepart}`.toLowerCase();
+    const searchString = `${m.nom} ${m.prenom} ${m.etat?.replace("_", " ")} ${m.dateArrivee} ${m.dateDepart} ${m.service || ""} ${m.statut || ""}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
 
@@ -249,6 +280,11 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
             {erreur}
           </div>
         )}
+        {updateError && (
+          <div className="mb-2 px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-md text-[10px] font-bold animate-pulse shadow-sm">
+            ⚠️ {updateError}
+          </div>
+        )}
         <div className="mb-3">
           {!isSearchCollapsed && (
             <input
@@ -271,13 +307,13 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
                 <div className="font-semibold text-slate-800 flex flex-wrap gap-1">
                   <EditableField
                     value={m.prenom} 
-                    onSave={(newVal) => { m.prenom = newVal; handleUpdateField(m); }} 
+                    onSave={(newVal) => { handleUpdateField({ ...m, prenom: newVal }); }} 
                     isGuest={isGuest}
                     placeholder="Prénom"
                   />
                   <EditableField
                     value={m.nom} 
-                    onSave={(newVal) => { m.nom = newVal; handleUpdateField(m); }} 
+                    onSave={(newVal) => { handleUpdateField({ ...m, nom: newVal }); }} 
                     isGuest={isGuest}
                     placeholder="Nom"
                   />
@@ -290,7 +326,7 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
                       value={m.dateArrivee} 
                       type="date"
                       isGuest={isGuest}
-                      onSave={(newVal) => { m.dateArrivee = formatDate(newVal); handleUpdateField(m); }} 
+                      onSave={(newVal) => { handleUpdateField({ ...m, dateArrivee: formatDate(newVal) }); }} 
                     />
                   </div>
                   <div className="flex items-center gap-2 px-2 py-1 bg-red-50 text-red-700 rounded-md border border-red-100 shadow-sm" title="Départ">
@@ -299,8 +335,60 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
                       value={m.dateDepart} 
                       type="date"
                       isGuest={isGuest}
-                      onSave={(newVal) => { m.dateDepart = formatDate(newVal); handleUpdateField(m); }} 
+                      onSave={(newVal) => { handleUpdateField({ ...m, dateDepart: formatDate(newVal) }); }} 
                     />
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100 shadow-sm" title="Modifier le service">
+                    <Building2 size={10} className="text-indigo-400" />
+                    <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter mr-0.5">Service:</span>
+                    <EditableField 
+                      value={m.service || ""}
+                      onSave={(newVal) => { handleUpdateField({ ...m, service: newVal }); }}
+                      placeholder="Non défini"
+                      isGuest={isGuest}
+                    />
+                  </div>
+                  
+                  <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-700 rounded-lg border border-amber-100 shadow-sm" title="Modifier le statut">
+                    <UserCircle size={10} className="text-amber-400" />
+                    <span className="text-[10px] text-amber-400 font-bold uppercase tracking-tighter mr-0.5">Statut:</span>
+                    <EditableField 
+                      value={m.statut || ""}
+                      onSave={(newVal) => { handleUpdateField({ ...m, statut: newVal }); }}
+                      placeholder="Non défini"
+                      isGuest={isGuest}
+                    />
+                  </div>
+
+                  <div className="flex items-center flex-wrap gap-2">
+                    {m.urlTicketGlpi && (
+                      <a 
+                        href={m.urlTicketGlpi} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all shadow-sm hover:shadow-md active:scale-95 group"
+                        title="Ouvrir le Ticket GLPI"
+                      >
+                        <Ticket size={12} className="group-hover:rotate-12 transition-transform" />
+                        Ticket GLPI
+                      </a>
+                    )}
+                    
+                    {!isGuest && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 shadow-sm hover:bg-blue-100 transition-colors" title="Modifier l'URL du Ticket">
+                        <Ticket size={10} className="text-blue-400 shrink-0" />
+                        <span className="text-[10px] text-blue-400 font-bold uppercase tracking-tighter mr-0.5">Ticket:</span>
+                        <EditableField 
+                          value={m.urlTicketGlpi || ""}
+                          onSave={(newVal) => { handleUpdateField({ ...m, urlTicketGlpi: newVal }); }}
+                          placeholder={m.urlTicketGlpi ? "Détails" : "+ Ajouter lien"}
+                          isGuest={isGuest}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -417,6 +505,47 @@ export default function WidgetMouvements({ onClose, isGuest }: { onClose?: () =>
               </select>
             </div>
           )}
+
+          <div className={`grid ${isCompactLayout ? "grid-cols-1" : "grid-cols-2"} gap-3`}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 text-xs">Service</label>
+              <input 
+                type="text" 
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-purple-500 text-sm" 
+                placeholder="Ex: BFLI, BCL..." 
+                value={service}
+                onChange={(e) => setService(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 text-xs">Statut</label>
+              <input 
+                type="text" 
+                list="statuts-list" 
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-purple-500 text-sm" 
+                placeholder="Ex: Contractuel(le)..." 
+                value={statut}
+                onChange={(e) => setStatut(e.target.value)}
+              />
+              <datalist id="statuts-list">
+                <option value="Titulaire" />
+                <option value="Contractuel(le)" />
+                <option value="Stagiaire" />
+                <option value="Apprenti(e)" />
+              </datalist>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Lien Ticket GLPI</label>
+            <input 
+              type="url" 
+              className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-purple-500 text-sm" 
+              placeholder="https://glpi.exemple.fr/..." 
+              value={urlTicketGlpi}
+              onChange={(e) => setUrlTicketGlpi(e.target.value)}
+            />
+          </div>
 
           <button 
             type="submit" 
