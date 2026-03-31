@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useCallback, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { apiFetch } from "./apiConfig";
 
@@ -20,7 +20,7 @@ export interface EtatAchatDTO {
 export const useGetAchatGroupe = () => {
   const context = useContext(AuthContext);
 
-  const getAchatGroupe = async () => {
+  const getAchatGroupe = useCallback(async () => {
     if (!context?.groupeActifId) {
       return null;
     }
@@ -42,13 +42,13 @@ export const useGetAchatGroupe = () => {
 
     const data = await response.json();
     return data;
-  };
+  }, [context?.groupeActifId]);
 
   return getAchatGroupe;
 };
 
 export const useUpdateEtatAchat = () => {
-  const updateEtatAchat = async (id: number, etat: string) => {
+  const updateEtatAchat = useCallback(async (id: number, etat: string) => {
     const response = await apiFetch(`/achats/${id}/etat`, {
       method: "PATCH",
       body: JSON.stringify({ etat }),
@@ -59,7 +59,7 @@ export const useUpdateEtatAchat = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return updateEtatAchat;
 };
@@ -67,25 +67,28 @@ export const useUpdateEtatAchat = () => {
 export const useUpdateAchat = () => {
   const context = useContext(AuthContext);
 
-  const updateAchat = async (achat: AchatDTO) => {
-    if (!context?.groupeActifId) {
-      throw new Error("Aucun groupe actif");
-    }
+  const updateAchat = useCallback(
+    async (achat: AchatDTO) => {
+      if (!context?.groupeActifId) {
+        throw new Error("Aucun groupe actif");
+      }
 
-    const response = await apiFetch(
-      `/groupes/${context.groupeActifId}/achats/${achat.id}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(achat),
-      },
-    );
+      const response = await apiFetch(
+        `/groupes/${context.groupeActifId}/achats/${achat.id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(achat),
+        },
+      );
 
-    if (!response.ok) {
-      throw new Error("Impossible de mettre à jour l'achat");
-    }
+      if (!response.ok) {
+        throw new Error("Impossible de mettre à jour l'achat");
+      }
 
-    return await response.json();
-  };
+      return await response.json();
+    },
+    [context?.groupeActifId],
+  );
 
   return updateAchat;
 };
@@ -93,25 +96,28 @@ export const useUpdateAchat = () => {
 export const useCreateAchat = () => {
   const context = useContext(AuthContext);
 
-  const createAchat = async (achat: AchatDTO) => {
-    if (!context?.groupeActifId) {
-      throw new Error("Aucun groupe actif");
-    }
+  const createAchat = useCallback(
+    async (achat: AchatDTO) => {
+      if (!context?.groupeActifId) {
+        throw new Error("Aucun groupe actif");
+      }
 
-    const response = await apiFetch(
-      `/groupes/${context.groupeActifId}/achats`,
-      {
-        method: "POST",
-        body: JSON.stringify(achat),
-      },
-    );
+      const response = await apiFetch(
+        `/groupes/${context.groupeActifId}/achats`,
+        {
+          method: "POST",
+          body: JSON.stringify(achat),
+        },
+      );
 
-    if (!response.ok) {
-      throw new Error("Impossible de créer l'achat");
-    }
+      if (!response.ok) {
+        throw new Error("Impossible de créer l'achat");
+      }
 
-    return await response.json();
-  };
+      return await response.json();
+    },
+    [context?.groupeActifId],
+  );
 
   return createAchat;
 };
@@ -119,30 +125,33 @@ export const useCreateAchat = () => {
 export const useDeleteAchat = () => {
   const context = useContext(AuthContext);
 
-  const deleteAchat = async (idAchat: number) => {
-    if (!context?.groupeActifId) {
-      throw new Error("Aucun groupe actif");
-    }
+  const deleteAchat = useCallback(
+    async (idAchat: number) => {
+      if (!context?.groupeActifId) {
+        throw new Error("Aucun groupe actif");
+      }
 
-    const response = await apiFetch(
-      `/groupes/${context.groupeActifId}/achats/${idAchat}`,
-      {
-        method: "DELETE",
-      },
-    );
+      const response = await apiFetch(
+        `/groupes/${context.groupeActifId}/achats/${idAchat}`,
+        {
+          method: "DELETE",
+        },
+      );
 
-    if (!response.ok) {
-      throw new Error("Impossible de supprimer l'achat");
-    }
+      if (!response.ok) {
+        throw new Error("Impossible de supprimer l'achat");
+      }
 
-    return await response.text();
-  };
+      return await response.text();
+    },
+    [context?.groupeActifId],
+  );
 
   return deleteAchat;
 };
 
 export const useGetEtatAchat = () => {
-  const getEtatAchat = async (idAchat: number) => {
+  const getEtatAchat = useCallback(async (idAchat: number) => {
     const response = await apiFetch(`/achats/${idAchat}/etat`, {
       method: "GET",
     });
@@ -152,13 +161,13 @@ export const useGetEtatAchat = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return getEtatAchat;
 };
 
 export const useGetAllEtatsAchat = () => {
-  const getAllEtatsAchat = async () => {
+  const getAllEtatsAchat = useCallback(async () => {
     const response = await apiFetch(`/achats/etats`, {
       method: "GET",
     });
@@ -168,7 +177,7 @@ export const useGetAllEtatsAchat = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return getAllEtatsAchat;
 };

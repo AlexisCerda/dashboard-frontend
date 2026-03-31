@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useCallback, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { apiFetch } from "./apiConfig";
 
@@ -10,7 +10,7 @@ export interface ImageDTO {
 
 export const useGetImagesByMembre = () => {
   const context = useContext(AuthContext);
-  const getImagesByMembre = async (idMembre?: number) => {
+  const getImagesByMembre = useCallback(async (idMembre?: number) => {
     const membreId = idMembre ?? context?.auth.idUser;
     if (!membreId) return [];
     const response = await apiFetch(`/membres/${membreId}/images`, {
@@ -22,14 +22,14 @@ export const useGetImagesByMembre = () => {
     if (!response.ok)
       throw new Error("Impossible de récupérer les images du membre");
     return await response.json();
-  };
+  }, [context?.auth.idUser]);
   return getImagesByMembre;
 };
 
 export const useCreateImageByMembre = () => {
   const context = useContext(AuthContext);
 
-  const createImageByMembre = async (file: File, idMembre?: number) => {
+  const createImageByMembre = useCallback(async (file: File, idMembre?: number) => {
     const membreId = idMembre ?? context?.auth.idUser;
     if (!membreId) throw new Error("Utilisateur non connecté");
 
@@ -48,14 +48,14 @@ export const useCreateImageByMembre = () => {
     }
 
     return await response.json();
-  };
+  }, [context?.auth.idUser]);
 
   return createImageByMembre;
 };
 
 export const useUpdateImageByMembre = () => {
   const context = useContext(AuthContext);
-  const updateImageByMembre = async (image: ImageDTO, idMembre?: number) => {
+  const updateImageByMembre = useCallback(async (image: ImageDTO, idMembre?: number) => {
     const membreId = idMembre ?? context?.auth.idUser;
     if (!membreId) throw new Error("Utilisateur non connecté");
     const response = await apiFetch(
@@ -67,17 +67,17 @@ export const useUpdateImageByMembre = () => {
     );
     if (!response.ok) throw new Error("Impossible de mettre à jour l'image");
     return await response.json();
-  };
+  }, [context?.auth.idUser]);
   return updateImageByMembre;
 };
 
 export const useDeleteImage = () => {
-  const deleteImage = async (idImage: number) => {
+  const deleteImage = useCallback(async (idImage: number) => {
     const response = await apiFetch(`/images/${idImage}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Impossible de supprimer l'image");
     return await response.text();
-  };
+  }, []);
   return deleteImage;
 };

@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useCallback, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { apiFetch } from "./apiConfig";
 
@@ -22,7 +22,7 @@ export interface EtatMouvementDTO {
 export const useGetMouvementGroupe = () => {
   const context = useContext(AuthContext);
 
-  const getMouvementGroupe = async () => {
+  const getMouvementGroupe = useCallback(async () => {
     if (!context?.groupeActifId) {
       return null;
     }
@@ -44,13 +44,13 @@ export const useGetMouvementGroupe = () => {
 
     const data = await response.json();
     return data;
-  };
+  }, [context?.groupeActifId]);
 
   return getMouvementGroupe;
 };
 
 export const useUpdateEtatMouvement = () => {
-  const updateEtatMouvement = async (id: number, etat: string) => {
+  const updateEtatMouvement = useCallback(async (id: number, etat: string) => {
     const response = await apiFetch(`/mouvements/${id}/etat`, {
       method: "PATCH",
       body: JSON.stringify({ etat }),
@@ -61,7 +61,7 @@ export const useUpdateEtatMouvement = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return updateEtatMouvement;
 };
@@ -69,7 +69,7 @@ export const useUpdateEtatMouvement = () => {
 export const useUpdateMouvement = () => {
   const context = useContext(AuthContext);
 
-  const updateMouvement = async (mouvement: MouvementDTO) => {
+  const updateMouvement = useCallback(async (mouvement: MouvementDTO) => {
     if (!context?.groupeActifId) {
       throw new Error("Aucun groupe actif");
     }
@@ -87,7 +87,7 @@ export const useUpdateMouvement = () => {
     }
 
     return await response.json();
-  };
+  }, [context?.groupeActifId]);
 
   return updateMouvement;
 };
@@ -95,7 +95,7 @@ export const useUpdateMouvement = () => {
 export const useCreateMouvement = () => {
   const context = useContext(AuthContext);
 
-  const createMouvement = async (mouvement: MouvementDTO) => {
+  const createMouvement = useCallback(async (mouvement: MouvementDTO) => {
     if (!context?.groupeActifId) {
       throw new Error("Aucun groupe actif");
     }
@@ -113,7 +113,7 @@ export const useCreateMouvement = () => {
     }
 
     return await response.json();
-  };
+  }, [context?.groupeActifId]);
 
   return createMouvement;
 };
@@ -121,7 +121,7 @@ export const useCreateMouvement = () => {
 export const useDeleteMouvement = () => {
   const context = useContext(AuthContext);
 
-  const deleteMouvement = async (idMouvement: number) => {
+  const deleteMouvement = useCallback(async (idMouvement: number) => {
     if (!context?.groupeActifId) {
       throw new Error("Aucun groupe actif");
     }
@@ -138,13 +138,13 @@ export const useDeleteMouvement = () => {
     }
 
     return await response.text();
-  };
+  }, [context?.groupeActifId]);
 
   return deleteMouvement;
 };
 
 export const useGetEtatMouvement = () => {
-  const getEtatMouvement = async (idMouvement: number) => {
+  const getEtatMouvement = useCallback(async (idMouvement: number) => {
     const response = await apiFetch(`/mouvements/${idMouvement}/etat`, {
       method: "GET",
     });
@@ -154,13 +154,13 @@ export const useGetEtatMouvement = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return getEtatMouvement;
 };
 
 export const useGetAllEtatsMouvement = () => {
-  const getAllEtatsMouvement = async () => {
+  const getAllEtatsMouvement = useCallback(async () => {
     const response = await apiFetch(`/mouvements/etats`, {
       method: "GET",
     });
@@ -170,7 +170,7 @@ export const useGetAllEtatsMouvement = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return getAllEtatsMouvement;
 };

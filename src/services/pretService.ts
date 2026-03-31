@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useCallback, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { apiFetch } from "./apiConfig";
 
@@ -21,17 +21,14 @@ export interface EtatPretDTO {
 export const useGetPretGroupe = () => {
   const context = useContext(AuthContext);
 
-  const getPretGroupe = async () => {
+  const getPretGroupe = useCallback(async () => {
     if (!context?.groupeActifId) {
       return null;
     }
 
-    const response = await apiFetch(
-      `/groupes/${context.groupeActifId}/prets`,
-      {
-        method: "GET",
-      },
-    );
+    const response = await apiFetch(`/groupes/${context.groupeActifId}/prets`, {
+      method: "GET",
+    });
 
     if (response.status === 401 || response.status === 404) {
       return null;
@@ -43,13 +40,13 @@ export const useGetPretGroupe = () => {
 
     const data = await response.json();
     return data;
-  };
+  }, [context?.groupeActifId]);
 
   return getPretGroupe;
 };
 
 export const useUpdateEtatPret = () => {
-  const updateEtatPret = async (id: number, etat: string) => {
+  const updateEtatPret = useCallback(async (id: number, etat: string) => {
     const response = await apiFetch(`/prets/${id}/etat`, {
       method: "PATCH",
       body: JSON.stringify({ etat }),
@@ -60,7 +57,7 @@ export const useUpdateEtatPret = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return updateEtatPret;
 };
@@ -68,25 +65,28 @@ export const useUpdateEtatPret = () => {
 export const useUpdatePret = () => {
   const context = useContext(AuthContext);
 
-  const updatePret = async (pret: PretDTO) => {
-    if (!context?.groupeActifId) {
-      throw new Error("Aucun groupe actif");
-    }
+  const updatePret = useCallback(
+    async (pret: PretDTO) => {
+      if (!context?.groupeActifId) {
+        throw new Error("Aucun groupe actif");
+      }
 
-    const response = await apiFetch(
-      `/groupes/${context.groupeActifId}/prets/${pret.id}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(pret),
-      },
-    );
+      const response = await apiFetch(
+        `/groupes/${context.groupeActifId}/prets/${pret.id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(pret),
+        },
+      );
 
-    if (!response.ok) {
-      throw new Error("Impossible de mettre à jour le pret");
-    }
+      if (!response.ok) {
+        throw new Error("Impossible de mettre à jour le pret");
+      }
 
-    return await response.json();
-  };
+      return await response.json();
+    },
+    [context?.groupeActifId],
+  );
 
   return updatePret;
 };
@@ -94,25 +94,28 @@ export const useUpdatePret = () => {
 export const useCreatePret = () => {
   const context = useContext(AuthContext);
 
-  const createPret = async (pret: PretDTO) => {
-    if (!context?.groupeActifId) {
-      throw new Error("Aucun groupe actif");
-    }
+  const createPret = useCallback(
+    async (pret: PretDTO) => {
+      if (!context?.groupeActifId) {
+        throw new Error("Aucun groupe actif");
+      }
 
-    const response = await apiFetch(
-      `/groupes/${context.groupeActifId}/prets`,
-      {
-        method: "POST",
-        body: JSON.stringify(pret),
-      },
-    );
+      const response = await apiFetch(
+        `/groupes/${context.groupeActifId}/prets`,
+        {
+          method: "POST",
+          body: JSON.stringify(pret),
+        },
+      );
 
-    if (!response.ok) {
-      throw new Error("Impossible de créer le pret");
-    }
+      if (!response.ok) {
+        throw new Error("Impossible de créer le pret");
+      }
 
-    return await response.json();
-  };
+      return await response.json();
+    },
+    [context?.groupeActifId],
+  );
 
   return createPret;
 };
@@ -120,30 +123,33 @@ export const useCreatePret = () => {
 export const useDeletePret = () => {
   const context = useContext(AuthContext);
 
-  const deletePret = async (idPret: number) => {
-    if (!context?.groupeActifId) {
-      throw new Error("Aucun groupe actif");
-    }
+  const deletePret = useCallback(
+    async (idPret: number) => {
+      if (!context?.groupeActifId) {
+        throw new Error("Aucun groupe actif");
+      }
 
-    const response = await apiFetch(
-      `/groupes/${context.groupeActifId}/prets/${idPret}`,
-      {
-        method: "DELETE",
-      },
-    );
+      const response = await apiFetch(
+        `/groupes/${context.groupeActifId}/prets/${idPret}`,
+        {
+          method: "DELETE",
+        },
+      );
 
-    if (!response.ok) {
-      throw new Error("Impossible de supprimer le pret");
-    }
+      if (!response.ok) {
+        throw new Error("Impossible de supprimer le pret");
+      }
 
-    return await response.text();
-  };
+      return await response.text();
+    },
+    [context?.groupeActifId],
+  );
 
   return deletePret;
 };
 
 export const useGetEtatPret = () => {
-  const getEtatPret = async (idPret: number) => {
+  const getEtatPret = useCallback(async (idPret: number) => {
     const response = await apiFetch(`/prets/${idPret}/etat`, {
       method: "GET",
     });
@@ -153,13 +159,13 @@ export const useGetEtatPret = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return getEtatPret;
 };
 
 export const useGetAllEtatsPret = () => {
-  const getAllEtatsPret = async () => {
+  const getAllEtatsPret = useCallback(async () => {
     const response = await apiFetch(`/prets/etats`, {
       method: "GET",
     });
@@ -169,7 +175,7 @@ export const useGetAllEtatsPret = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return getAllEtatsPret;
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, memo, useContext } from "react";
+import { useEffect, useState, useRef, memo, useContext, useCallback } from "react";
 import WidgetFrame from "../WidgetFrame";
 import { AuthContext } from "../../context/AuthContext";
 import {
@@ -36,6 +36,24 @@ import EditableField from "../EditableField";
 
 const COMPACT_LAYOUT_BREAKPOINT = 420;
 
+const formatDate = (dateString: string) => {
+  try {
+    if (!dateString) return "";
+    if (dateString.includes("T")) {
+      return dateString.split("T")[0];
+    }
+    if (!dateString.includes("/")) return dateString;
+    const date = dateString.split("/");
+    const day = String(date[0]).padStart(2, "0");
+    const month = String(date[1]).padStart(2, "0");
+    const year = date[2];
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error(error);
+    return dateString;
+  }
+};
+
 const WidgetTaches = memo(function WidgetTaches({
   onClose,
   isGuest,
@@ -61,11 +79,17 @@ const WidgetTaches = memo(function WidgetTaches({
   const [showMyTasksOnly, setShowMyTasksOnly] = useState(false);
   const [isSearchCollapsed, setIsSearchCollapsed] = useState(true);
   const [isCompactLayout, setIsCompactLayout] = useState(false);
-  const [configLimits, setConfigLimits] = useState<{ maxTaches?: number } | null>(null);
+  const [configLimits, setConfigLimits] = useState<{ maxTaches?: number } | null>(
+    null,
+  );
   const [erreur, setErreur] = useState("");
   const [mouvements, setMouvements] = useState<MouvementDTO[]>([]);
-  const [selectedMouvementId, setSelectedMouvementId] = useState<number | "">("");
-  const [addingMembreForTacheId, setAddingMembreForTacheId] = useState<number | null>(null);
+  const [selectedMouvementId, setSelectedMouvementId] = useState<number | "">(
+    "",
+  );
+  const [addingMembreForTacheId, setAddingMembreForTacheId] = useState<
+    number | null
+  >(null);
   const [inlineSearchTerm, setInlineSearchTerm] = useState("");
   const showMyTasksRef = useRef(showMyTasksOnly);
   const widgetContainerRef = useRef<HTMLDivElement | null>(null);
@@ -95,7 +119,8 @@ const WidgetTaches = memo(function WidgetTaches({
     if (!container) return;
 
     const observedElement =
-      (container.closest(".react-grid-item") as HTMLElement | null) ?? container;
+      (container.closest(".react-grid-item") as HTMLElement | null) ??
+      container;
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
@@ -112,168 +137,7 @@ const WidgetTaches = memo(function WidgetTaches({
     };
   }, []);
 
-  useEffect(() => {
-    const fetchConfig = async () => {
-      try {
-        const cfg = await getConfig();
-        setConfigLimits(cfg ?? null);
-      } catch (error) {
-        console.error("Erreur récupération config", error);
-      }
-    };
-
-    fetchConfig();
-  }, [getConfig]);
-
-  const toggleMembreSelection = (membreId: number) => {
-    setSelectedMembresIds((prev) =>
-      prev.includes(membreId)
-        ? prev.filter((id) => id !== membreId)
-        : [...prev, membreId],
-    );
-  };
-
-  const handleSubmitTache = async (
-    e: React.SyntheticEvent<HTMLFormElement>,
-  ) => {
-    e.preventDefault();
-
-    if (
-      configLimits?.maxTaches !== undefined &&
-      taches.length >= configLimits.maxTaches
-    ) {
-      setErreur("Nombre maximum de tâches atteint");
-      setIsModalOpen(false);
-      setNom("");
-      setDescription("");
-      setDateDebut("");
-      setDateFin("");
-      setSelectedMembresIds([]);
-      return;
-    }
-
-    const data: TacheDTO = {
-      id: 0,
-      nom: nom,
-      description: description,
-      dateDebut: dateDebut || null,
-      dateLimite: dateFin || null,
-      etat: etat,
-      membresIds: selectedMembresIds,
-      mouvement: selectedMouvementId === "" ? null : { id: Number(selectedMouvementId) } as any,
-    };
-
-    const newTache = await addTache(data);
-    setErreur("");
-
-    if (newTache && newTache.id && selectedMembresIds.length > 0) {
-      await Promise.all(
-        selectedMembresIds.map((membreId) =>
-          addMembreToTache(newTache.id as number, membreId),
-        ),
-      );
-    }
-
-    await refreshData();
-
-    setIsModalOpen(false);
-    setNom("");
-    setDescription("");
-    setDateDebut("");
-    setDateFin("");
-    setSelectedMembresIds([]);
-    setSearchTermAdd("");
-    setSelectedMouvementId("");
-    if (etats.length > 0) setEtat(etats[0]);
-  };
-
-  const handleDeleteTache = async (id: number) => {
-    await DeleteTache(id);
-    refreshData();
-  };
-
-  const handleRemoveMembre = async (tacheId: number, membreId: number) => {
-    await RemoveMembre(tacheId, membreId);
-    refreshData();
-  };
-
-  const handleUpdateField = async (tache: TacheDTO) => {
-    if (isGuest) return;
-    
-    // Optimistic Update: Update the local state immediately
-    setTaches(prev => prev.map(t => t.id === tache.id ? tache : t));
-    
-    try {
-      await UpdateTache(tache);
-      await refreshData();
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour de la tâche", error);
-      // Rollback if needed
-      await refreshData();
-    }
-  };
-
-  const handleAddMembreInline = async (tacheId: number, membreId: number) => {
-    await addMembreToTache(tacheId, membreId);
-    setAddingMembreForTacheId(null);
-    setInlineSearchTerm("");
-    refreshData();
-  };
-
-  useEffect(() => {
-    if (!context?.groupeActifId || context?.auth.idUser == null) return;
-
-    const frequence = `/topic/groupe/${context.groupeActifId}`;
-    const stompClient = new Client({
-      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
-
-      reconnectDelay: 5000,
-      onConnect: () => {
-        stompClient.subscribe(frequence, (message) => {
-          if (message.body === "REFRESH_TACHES") {
-            refreshData();
-          }
-        });
-      },
-    });
-    refreshData();
-
-    const activationTimer = window.setTimeout(() => {
-      stompClient.activate();
-    }, 400);
-
-    return () => {
-      window.clearTimeout(activationTimer);
-      if (stompClient.active) {
-        void stompClient.deactivate();
-      }
-    };
-  }, [context?.groupeActifId, context?.auth.idUser]);
-
-  useEffect(() => {
-    const fetchEtats = async () => {
-      const resultat = await GetEtatTache();
-      setEtats(resultat);
-      if (resultat.length > 0 && !etat) {
-        setEtat(resultat[0]);
-      }
-    };
-    fetchEtats();
-  }, [GetEtatTache, etat]);
-
-  useEffect(() => {
-    const fetchMouvements = async () => {
-      try {
-        const result = await getMouvementGroupe();
-        setMouvements(result || []);
-      } catch (error) {
-        console.error("Erreur récupération mouvements", error);
-      }
-    };
-    fetchMouvements();
-  }, [getMouvementGroupe]);
-
-  async function refreshData() {
+  const refreshData = useCallback(async () => {
     if (!context?.groupeActifId) return;
 
     const isMyTasks = showMyTasksRef.current;
@@ -308,11 +172,193 @@ const WidgetTaches = memo(function WidgetTaches({
     );
     setMembresGroupe(resultatTousMembres);
     return true;
-  }
+  }, [
+    context?.groupeActifId,
+    GetTachesByUser,
+    GetTachesByGroupe,
+    GetMembreByTache,
+    GetUsersbyGroupe,
+  ]);
+
+  const toggleMembreSelection = useCallback((membreId: number) => {
+    setSelectedMembresIds((prev) =>
+      prev.includes(membreId)
+        ? prev.filter((id) => id !== membreId)
+        : [...prev, membreId],
+    );
+  }, []);
+
+  const handleDeleteTache = useCallback(
+    async (id: number) => {
+      await DeleteTache(id);
+      refreshData();
+    },
+    [DeleteTache, refreshData],
+  );
+
+  const handleRemoveMembre = useCallback(
+    async (tacheId: number, membreId: number) => {
+      await RemoveMembre(tacheId, membreId);
+      refreshData();
+    },
+    [RemoveMembre, refreshData],
+  );
+
+  const handleUpdateField = useCallback(
+    async (tache: TacheDTO) => {
+      if (isGuest) return;
+
+      // Optimistic Update
+      setTaches((prev) => prev.map((t) => (t.id === tache.id ? tache : t)));
+
+      try {
+        await UpdateTache(tache);
+        await refreshData();
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour de la tâche", error);
+        await refreshData();
+      }
+    },
+    [isGuest, UpdateTache, refreshData],
+  );
+
+  const handleAddMembreInline = useCallback(
+    async (tacheId: number, membreId: number) => {
+      await addMembreToTache(tacheId, membreId);
+      setAddingMembreForTacheId(null);
+      setInlineSearchTerm("");
+      refreshData();
+    },
+    [addMembreToTache, refreshData],
+  );
+
+  const handleSubmitTache = async (
+    e: React.SyntheticEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
+
+    if (
+      configLimits?.maxTaches !== undefined &&
+      taches.length >= configLimits.maxTaches
+    ) {
+      setErreur("Nombre maximum de tâches atteint");
+      setIsModalOpen(false);
+      setNom("");
+      setDescription("");
+      setDateDebut("");
+      setDateFin("");
+      setSelectedMembresIds([]);
+      return;
+    }
+
+    const data: TacheDTO = {
+      id: 0,
+      nom: nom,
+      description: description,
+      dateDebut: dateDebut || null,
+      dateLimite: dateFin || null,
+      etat: etat,
+      membresIds: selectedMembresIds,
+      mouvement:
+        selectedMouvementId === ""
+          ? null
+          : ({ id: Number(selectedMouvementId) } as any),
+    };
+
+    const newTache = await addTache(data);
+    setErreur("");
+
+    if (newTache && newTache.id && selectedMembresIds.length > 0) {
+      await Promise.all(
+        selectedMembresIds.map((membreId) =>
+          addMembreToTache(newTache.id as number, membreId),
+        ),
+      );
+    }
+
+    await refreshData();
+
+    setIsModalOpen(false);
+    setNom("");
+    setDescription("");
+    setDateDebut("");
+    setDateFin("");
+    setSelectedMembresIds([]);
+    setSearchTermAdd("");
+    setSelectedMouvementId("");
+    if (etats.length > 0) setEtat(etats[0]);
+  };
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const cfg = await getConfig();
+        setConfigLimits(cfg ?? null);
+      } catch (error) {
+        console.error("Erreur récupération config", error);
+      }
+    };
+
+    fetchConfig();
+  }, [getConfig]);
+
+  useEffect(() => {
+    if (!context?.groupeActifId || context?.auth.idUser == null) return;
+
+    const frequence = `/topic/groupe/${context.groupeActifId}`;
+    const stompClient = new Client({
+      webSocketFactory: () =>
+        new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+
+      reconnectDelay: 5000,
+      onConnect: () => {
+        stompClient.subscribe(frequence, (message) => {
+          if (message.body === "REFRESH_TACHES") {
+            refreshData();
+          }
+        });
+      },
+    });
+    refreshData();
+
+    const activationTimer = window.setTimeout(() => {
+      stompClient.activate();
+    }, 400);
+
+    return () => {
+      window.clearTimeout(activationTimer);
+      if (stompClient.active) {
+        void stompClient.deactivate();
+      }
+    };
+  }, [context?.groupeActifId, context?.auth.idUser, refreshData]);
+
+  useEffect(() => {
+    const fetchEtats = async () => {
+      const resultat = await GetEtatTache();
+      setEtats(resultat);
+      if (resultat.length > 0 && !etat) {
+        setEtat(resultat[0]);
+      }
+    };
+    fetchEtats();
+  }, [GetEtatTache, etat]);
+
+  useEffect(() => {
+    const fetchMouvements = async () => {
+      try {
+        const result = await getMouvementGroupe();
+        setMouvements(result || []);
+      } catch (error) {
+        console.error("Erreur récupération mouvements", error);
+      }
+    };
+    fetchMouvements();
+  }, [getMouvementGroupe]);
 
   useEffect(() => {
     refreshData();
-  }, [showMyTasksOnly]);
+  }, [showMyTasksOnly, refreshData]);
 
   const filteredTaches = taches.filter((tache: TacheDTO) => {
     const fullName =
@@ -323,24 +369,6 @@ const WidgetTaches = memo(function WidgetTaches({
   const filteredMembresAdd = membresGroupe.filter((m) =>
     `${m.nom} ${m.prenom}`.toLowerCase().includes(searchTermAdd.toLowerCase()),
   );
-
-  const formatDate = (dateString: string) => {
-    try {
-      if (!dateString) return "";
-      if (dateString.includes("T")) {
-        return dateString.split("T")[0];
-      }
-      if (!dateString.includes("/")) return dateString;
-      const date = dateString.split("/");
-      const day = String(date[0]).padStart(2, "0");
-      const month = String(date[1]).padStart(2, "0");
-      const year = date[2];
-      return `${year}-${month}-${day}`;
-    } catch (error) {
-      console.error(error);
-      return dateString;
-    }
-  };
 
   const headerActions = (
     <>
@@ -395,8 +423,10 @@ const WidgetTaches = memo(function WidgetTaches({
       <div ref={widgetContainerRef} className="flex flex-col h-full p-3">
         {isInteracting ? (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60">
-             <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
-             <p className="text-xs font-medium italic">Optimisation en cours...</p>
+            <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
+            <p className="text-xs font-medium italic">
+              Optimisation en cours...
+            </p>
           </div>
         ) : (
           <>
@@ -424,7 +454,9 @@ const WidgetTaches = memo(function WidgetTaches({
                   className={`${isCompactLayout ? "flex flex-col" : "grid grid-cols-[minmax(0,1fr)_9rem] items-start"} gap-3 p-3 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 text-sm`}
                 >
                   <div className="flex flex-col flex-1 min-w-0 gap-1 overflow-hidden">
-                    <div className={`flex flex-wrap font-semibold text-slate-800 items-center gap-1`}>
+                    <div
+                      className={`flex flex-wrap font-semibold text-slate-800 items-center gap-1`}
+                    >
                       <EditableField
                         value={tache.nom}
                         onSave={(newVal) => {
@@ -447,54 +479,73 @@ const WidgetTaches = memo(function WidgetTaches({
                     </div>
 
                     <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
-    <span className="text-gray-400">Période:</span>
-    <EditableField
-      value={tache.dateDebut || ""}
-      type="date"
-      isGuest={isGuest || showMyTasksOnly}
-      onSave={(newVal) => {
-        handleUpdateField({ ...tache, dateDebut: formatDate(newVal) });
-      }}
-      placeholder="Début"
-      noWrap={false}
-    />
-    <span className="text-gray-300">→</span>
-    <EditableField
-      value={tache.dateLimite || ""}
-      type="date"
-      isGuest={isGuest || showMyTasksOnly}
-      onSave={(newVal) => {
-        handleUpdateField({ ...tache, dateLimite: formatDate(newVal) });
-      }}
-      placeholder="Fin"
-      noWrap={false}
-    />
-  </div>
+                      <span className="text-gray-400">Période:</span>
+                      <EditableField
+                        value={tache.dateDebut || ""}
+                        type="date"
+                        isGuest={isGuest || showMyTasksOnly}
+                        onSave={(newVal) => {
+                          handleUpdateField({
+                            ...tache,
+                            dateDebut: formatDate(newVal),
+                          });
+                        }}
+                        placeholder="Début"
+                        noWrap={false}
+                      />
+                      <span className="text-gray-300">→</span>
+                      <EditableField
+                        value={tache.dateLimite || ""}
+                        type="date"
+                        isGuest={isGuest || showMyTasksOnly}
+                        onSave={(newVal) => {
+                          handleUpdateField({
+                            ...tache,
+                            dateLimite: formatDate(newVal),
+                          });
+                        }}
+                        placeholder="Fin"
+                        noWrap={false}
+                      />
+                    </div>
                     {tache.mouvementId && (
                       <div className="flex flex-wrap items-center gap-2 mt-2">
                         <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 text-slate-700 rounded-lg border border-slate-200 shadow-sm transition-all hover:bg-slate-100">
                           <UserCircle size={14} className="text-slate-400" />
-                          <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">Lié à :</span>
+                          <span className="text-[10px] text-gray-400 uppercase font-bold tracking-tight">
+                            Lié à :
+                          </span>
                           <span className="text-xs font-bold text-slate-800">
                             {(() => {
-                              const mouv = mouvements.find(m => m.id === tache.mouvementId);
-                              return mouv ? `${mouv.prenom} ${mouv.nom}` : `Mouvement #${tache.mouvementId}`;
+                              const mouv = mouvements.find(
+                                (m) => m.id === tache.mouvementId,
+                              );
+                              return mouv
+                                ? `${mouv.prenom} ${mouv.nom}`
+                                : `Mouvement #${tache.mouvementId}`;
                             })()}
                           </span>
                         </div>
 
                         {(() => {
-                          const mouv = mouvements.find(m => m.id === (tache.mouvement?.id || tache.mouvementId));
+                          const mouv = mouvements.find(
+                            (m) =>
+                              m.id ===
+                              (tache.mouvement?.id || tache.mouvementId),
+                          );
                           if (mouv?.urlTicketGlpi) {
                             return (
-                              <a 
+                              <a
                                 href={mouv.urlTicketGlpi}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all shadow-sm hover:shadow-md active:scale-95 group"
                                 title="Ouvrir le Ticket GLPI du mouvement"
                               >
-                                <Ticket size={12} className="group-hover:rotate-12 transition-transform" />
+                                <Ticket
+                                  size={12}
+                                  className="group-hover:rotate-12 transition-transform"
+                                />
                                 Ticket GLPI
                               </a>
                             );
@@ -506,9 +557,10 @@ const WidgetTaches = memo(function WidgetTaches({
                     <div className="text-[11px] text-gray-500 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-1">
                       <span className="pt-0.5">Membres :</span>
                       <div className="flex flex-wrap items-center gap-1 min-w-0">
-                        {tache.id !== undefined && membres[tache.id]?.length === 0 && (
-                          <span className="text-gray-400 italic">Aucun</span>
-                        )}
+                        {tache.id !== undefined &&
+                          membres[tache.id]?.length === 0 && (
+                            <span className="text-gray-400 italic">Aucun</span>
+                          )}
                         {tache.id !== undefined &&
                           membres[tache.id]?.map((membre: MembreDTO) => (
                             <span
@@ -527,6 +579,7 @@ const WidgetTaches = memo(function WidgetTaches({
                                       membre.id as number,
                                     )
                                   }
+                                  onMouseDown={(e) => e.stopPropagation()}
                                   className="hover:text-red-600 hover:bg-red-100 text-red-500 rounded-full p-0.5 transition-colors ml-1 shrink-0"
                                 >
                                   <UserRoundX size={10} />
@@ -535,7 +588,14 @@ const WidgetTaches = memo(function WidgetTaches({
                             </span>
                           ))}
                         {!isGuest && !showMyTasksOnly && (
-                          <div className="relative" ref={addingMembreForTacheId === tache.id ? inlineDropdownRef : null}>
+                          <div
+                            className="relative"
+                            ref={
+                              addingMembreForTacheId === tache.id
+                                ? inlineDropdownRef
+                                : null
+                            }
+                          >
                             <button
                               onClick={() => {
                                 if (addingMembreForTacheId === tache.id) {
@@ -546,6 +606,7 @@ const WidgetTaches = memo(function WidgetTaches({
                                   setInlineSearchTerm("");
                                 }
                               }}
+                              onMouseDown={(e) => e.stopPropagation()}
                               className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
                               title="Ajouter un membre"
                             >
@@ -558,31 +619,51 @@ const WidgetTaches = memo(function WidgetTaches({
                                   type="text"
                                   placeholder="Rechercher..."
                                   value={inlineSearchTerm}
-                                  onChange={(e) => setInlineSearchTerm(e.target.value)}
+                                  onChange={(e) =>
+                                    setInlineSearchTerm(e.target.value)
+                                  }
                                   className="w-full px-2 py-1.5 border-b border-slate-100 outline-none rounded-t-lg"
                                 />
                                 <div className="max-h-28 overflow-y-auto">
                                   {membresGroupe
                                     .filter((m) => {
-                                      const alreadyIn = membres[tache.id as number]?.some((am) => am.id === m.id);
-                                      const matchSearch = `${m.nom} ${m.prenom}`.toLowerCase().includes(inlineSearchTerm.toLowerCase());
+                                      const alreadyIn = membres[
+                                        tache.id as number
+                                      ]?.some((am) => am.id === m.id);
+                                      const matchSearch = `${m.nom} ${m.prenom}`
+                                        .toLowerCase()
+                                        .includes(
+                                          inlineSearchTerm.toLowerCase(),
+                                        );
                                       return !alreadyIn && matchSearch;
                                     })
                                     .map((m) => (
                                       <div
                                         key={m.id}
-                                        onClick={() => handleAddMembreInline(tache.id as number, m.id as number)}
+                                        onClick={() =>
+                                          handleAddMembreInline(
+                                            tache.id as number,
+                                            m.id as number,
+                                          )
+                                        }
+                                        onMouseDown={(e) => e.stopPropagation()}
                                         className="px-2 py-1.5 hover:bg-blue-50 cursor-pointer text-slate-700 border-b border-slate-50 last:border-0"
                                       >
                                         {m.prenom} {m.nom}
                                       </div>
                                     ))}
                                   {membresGroupe.filter((m) => {
-                                    const alreadyIn = membres[tache.id as number]?.some((am) => am.id === m.id);
-                                    const matchSearch = `${m.nom} ${m.prenom}`.toLowerCase().includes(inlineSearchTerm.toLowerCase());
+                                    const alreadyIn = membres[
+                                      tache.id as number
+                                    ]?.some((am) => am.id === m.id);
+                                    const matchSearch = `${m.nom} ${m.prenom}`
+                                      .toLowerCase()
+                                      .includes(inlineSearchTerm.toLowerCase());
                                     return !alreadyIn && matchSearch;
                                   }).length === 0 && (
-                                    <p className="px-2 py-2 text-gray-400 italic text-center">Aucun membre disponible</p>
+                                    <p className="px-2 py-2 text-gray-400 italic text-center">
+                                      Aucun membre disponible
+                                    </p>
                                   )}
                                 </div>
                               </div>
@@ -593,19 +674,30 @@ const WidgetTaches = memo(function WidgetTaches({
                     </div>
                   </div>
 
-                  <div className={`flex ${isCompactLayout ? "w-full flex-row items-center justify-end mt-2" : "w-full flex-col items-end"} gap-2`}>
+                  <div
+                    className={`flex ${isCompactLayout ? "w-full flex-row items-center justify-end mt-2" : "w-full flex-col items-end"} gap-2`}
+                  >
                     {!isGuest && !showMyTasksOnly && (
-                      <div className={`${isCompactLayout ? "w-full" : "w-full"} mt-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-2 group hover:border-blue-300 transition-colors`}>
-                        <Link size={12} className="text-slate-400 group-hover:text-blue-500" />
+                      <div
+                        className={`${isCompactLayout ? "w-full" : "w-full"} mt-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-2 group hover:border-blue-300 transition-colors`}
+                      >
+                        <Link
+                          size={12}
+                          className="text-slate-400 group-hover:text-blue-500"
+                        />
                         <select
                           className="bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full cursor-pointer"
+                          onMouseDown={(e) => e.stopPropagation()}
                           value={tache.mouvement?.id || tache.mouvementId || ""}
                           onChange={async (e) => {
-                            const newMouvId = e.target.value === "" ? null : Number(e.target.value);
-                            const updatedTache = { 
-                              ...tache, 
+                            const newMouvId =
+                              e.target.value === ""
+                                ? null
+                                : Number(e.target.value);
+                            const updatedTache = {
+                              ...tache,
                               mouvement: newMouvId ? { id: newMouvId } : null,
-                              mouvementId: newMouvId 
+                              mouvementId: newMouvId,
                             } as TacheDTO;
                             await handleUpdateField(updatedTache);
                           }}
@@ -623,6 +715,7 @@ const WidgetTaches = memo(function WidgetTaches({
                     {!isGuest && !showMyTasksOnly ? (
                       <select
                         className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-xs p-1.5 rounded-lg border border-blue-200 outline-none bg-blue-50 text-blue-800`}
+                        onMouseDown={(e) => e.stopPropagation()}
                         value={tache.etat}
                         onChange={async (e) => {
                           if (tache.id !== undefined) {
@@ -638,7 +731,9 @@ const WidgetTaches = memo(function WidgetTaches({
                         ))}
                       </select>
                     ) : (
-                      <p className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-full font-medium`}>
+                      <p
+                        className={`${isCompactLayout ? "w-auto min-w-36 max-w-[70%]" : "w-full"} text-center text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-full font-medium`}
+                      >
                         {tache.etat.replace("_", " ").toLowerCase()}
                       </p>
                     )}
@@ -646,6 +741,7 @@ const WidgetTaches = memo(function WidgetTaches({
                     {!isGuest && !showMyTasksOnly && (
                       <button
                         onClick={() => handleDeleteTache(tache.id as number)}
+                        onMouseDown={(e) => e.stopPropagation()}
                         className="shrink-0 hover:text-red-600 text-red-500 font-medium p-1 rounded transition-colors"
                         title="Supprimer la tâche"
                       >
@@ -740,7 +836,11 @@ const WidgetTaches = memo(function WidgetTaches({
             <select
               className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500 text-sm"
               value={selectedMouvementId}
-              onChange={(e) => setSelectedMouvementId(e.target.value === "" ? "" : Number(e.target.value))}
+              onChange={(e) =>
+                setSelectedMouvementId(
+                  e.target.value === "" ? "" : Number(e.target.value),
+                )
+              }
             >
               <option value="">-- Aucune liaison --</option>
               {mouvements.map((m) => (

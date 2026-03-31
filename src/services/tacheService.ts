@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useCallback, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { apiFetch } from "./apiConfig";
 
@@ -25,7 +25,7 @@ export interface AddMembreTache {
 export const useGetTacheGroupe = () => {
   const context = useContext(AuthContext);
 
-  const getTacheGroupe = async () => {
+  const getTacheGroupe = useCallback(async () => {
     if (!context?.auth.idUser) {
       return null;
     }
@@ -47,7 +47,7 @@ export const useGetTacheGroupe = () => {
 
     const data = await response.json();
     return data;
-  };
+  }, [context?.auth.idUser, context?.groupeActifId]);
 
   return getTacheGroupe;
 };
@@ -55,7 +55,7 @@ export const useGetTacheGroupe = () => {
 export const useGetTacheMembre = () => {
   const context = useContext(AuthContext);
 
-  const getTacheMembre = async () => {
+  const getTacheMembre = useCallback(async () => {
     if (!context?.auth.idUser) {
       return null;
     }
@@ -77,13 +77,13 @@ export const useGetTacheMembre = () => {
 
     const data = await response.json();
     return data;
-  };
+  }, [context?.auth.idUser]);
 
   return getTacheMembre;
 };
 
 export const useAddMembreToTache = () => {
-  const addMembreToTache = async (idTache: number, idMembre: number) => {
+  const addMembreToTache = useCallback(async (idTache: number, idMembre: number) => {
     const response = await apiFetch(`/taches/${idTache}/membres`, {
       method: "POST",
       body: JSON.stringify({ idMembre }),
@@ -94,13 +94,13 @@ export const useAddMembreToTache = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return addMembreToTache;
 };
 
 export const useDeleteMembreFromTache = () => {
-  const deleteMembreFromTache = async (idTache: number, idMembre: number) => {
+  const deleteMembreFromTache = useCallback(async (idTache: number, idMembre: number) => {
     const response = await apiFetch(
       `/taches/${idTache}/membres/${idMembre}`,
       {
@@ -113,13 +113,13 @@ export const useDeleteMembreFromTache = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return deleteMembreFromTache;
 };
 
 export const useUpdateTache = () => {
-  const updateTache = async (tache: TacheDTO) => {
+  const updateTache = useCallback(async (tache: TacheDTO) => {
     const response = await apiFetch(`/taches`, {
       method: "PUT",
       body: JSON.stringify(tache),
@@ -130,13 +130,13 @@ export const useUpdateTache = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return updateTache;
 };
 
 export const useDeleteTache = () => {
-  const deleteTache = async (id: number) => {
+  const deleteTache = useCallback(async (id: number) => {
     const response = await apiFetch(`/taches/${id}`, {
       method: "DELETE",
     });
@@ -146,14 +146,14 @@ export const useDeleteTache = () => {
     }
 
     return await response.text();
-  };
+  }, []);
 
   return deleteTache;
 };
 
 export const useAddTache = () => {
   const context = useContext(AuthContext);
-  const addTache = async (tache: TacheDTO) => {
+  const addTache = useCallback(async (tache: TacheDTO) => {
     const response = await apiFetch(
       `/groupes/${context?.groupeActifId}/taches`,
       {
@@ -169,13 +169,13 @@ export const useAddTache = () => {
     }
 
     return await response.json();
-  };
+  }, [context?.groupeActifId]);
 
   return addTache;
 };
 
 export const useUpdateEtatTache = () => {
-  const updateEtatTache = async (id: number, etat: string) => {
+  const updateEtatTache = useCallback(async (id: number, etat: string) => {
     const response = await apiFetch(`/taches/${id}/etat`, {
       method: "PATCH",
       body: JSON.stringify({ etat }),
@@ -186,13 +186,13 @@ export const useUpdateEtatTache = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return updateEtatTache;
 };
 
 export const useGetEtatTache = () => {
-  const getEtatTache = async () => {
+  const getEtatTache = useCallback(async () => {
     const response = await apiFetch(`/taches/etats`, {
       method: "GET",
     });
@@ -202,7 +202,7 @@ export const useGetEtatTache = () => {
     }
 
     return await response.json();
-  };
+  }, []);
 
   return getEtatTache;
 };
@@ -210,7 +210,7 @@ export const useGetEtatTache = () => {
 export const useGetMembreByTache = () => {
   const context = useContext(AuthContext);
 
-  const getMembreByTache = async (idTache: number) => {
+  const getMembreByTache = useCallback(async (idTache: number) => {
     if (!context?.auth.idUser) {
       return null;
     }
@@ -229,7 +229,7 @@ export const useGetMembreByTache = () => {
 
     const data = await response.json();
     return data;
-  };
+  }, [context?.auth.idUser]);
 
   return getMembreByTache;
 };

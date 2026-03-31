@@ -73,6 +73,7 @@ export default function EditableField({
         setTempValue(value || "");
         setIsEditing(true);
       }} 
+      onMouseDown={(e) => e.stopPropagation()}
       className={`cursor-pointer hover:bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded-md transition-colors wrap-break-word ${multiline ? "whitespace-pre-wrap" : noWrap ? "whitespace-nowrap" : "whitespace-normal"}`}
       title="Cliquer pour modifier"
     >

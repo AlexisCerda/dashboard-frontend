@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext, memo } from "react";
+import { useEffect, useState, useContext, memo, useCallback } from "react";
 import WidgetFrame from "../WidgetFrame";
 import { AuthContext } from "../../context/AuthContext";
 import {
@@ -20,6 +20,8 @@ import {
   Image as ImageIcon,
   Maximize,
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import EditableField from "../EditableField";
 
@@ -56,6 +58,111 @@ const WidgetImages = memo(function WidgetImages({
   const deleteImage = useDeleteImage();
   const getConfig = useGetConfig();
 
+  const refreshData = useCallback(async () => {
+    if (!context?.auth.idUser) return;
+    try {
+      const resultat = await getImagesByMembre();
+      setImages(resultat || []);
+      setRefreshKey(Date.now());
+    } catch (error) {
+      console.error("Erreur", error);
+    }
+  }, [context?.auth.idUser, getImagesByMembre]);
+
+  const handleNextImage = useCallback(() => {
+    if (images.length === 0) return;
+    const currentIndex = images.findIndex((img) => img.id === selectedImageId);
+    if (currentIndex === -1) return;
+    const nextIndex = (currentIndex + 1) % images.length;
+    const nextImage = images[nextIndex];
+    setSelectedImageId(nextImage.id);
+    localStorage.setItem(`widget_image_${widgetId}`, String(nextImage.id));
+  }, [images, selectedImageId, widgetId]);
+
+  const handlePrevImage = useCallback(() => {
+    if (images.length === 0) return;
+    const currentIndex = images.findIndex((img) => img.id === selectedImageId);
+    if (currentIndex === -1) return;
+    const prevIndex = (currentIndex - 1 + images.length) % images.length;
+    const prevImage = images[prevIndex];
+    setSelectedImageId(prevImage.id);
+    localStorage.setItem(`widget_image_${widgetId}`, String(prevImage.id));
+  }, [images, selectedImageId, widgetId]);
+
+  const handleSubmitImage = useCallback(
+    async (e: React.SyntheticEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      setErreur("");
+
+      if (
+        configLimits?.maxImages !== undefined &&
+        images.length >= configLimits.maxImages
+      ) {
+        setErreur("Nombre maximum d'images atteint.");
+        return;
+      }
+
+      if (!selectedFile) {
+        setErreur("Veuillez sélectionner un fichier.");
+        return;
+      }
+
+      if (selectedFile.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        setErreur(
+          `L'image dépasse la taille maximale (${MAX_FILE_SIZE_MB} Mo).`,
+        );
+        return;
+      }
+
+      try {
+        await createImageByMembre(selectedFile);
+        await refreshData();
+        setIsModalOpen(false);
+        setSelectedFile(null);
+        setErreur("");
+      } catch (error: any) {
+        setErreur(
+          error.message || "Erreur lors de l'envoi du fichier au serveur.",
+        );
+      }
+    },
+    [configLimits, images.length, selectedFile, createImageByMembre, refreshData],
+  );
+
+  const handleDeleteImage = useCallback(
+    async (id: number) => {
+      await deleteImage(id);
+      if (selectedImageId === id) {
+        setSelectedImageId(null);
+        localStorage.removeItem(`widget_image_${widgetId}`);
+      }
+      refreshData();
+    },
+    [deleteImage, selectedImageId, widgetId, refreshData],
+  );
+
+  const handleUpdateField = useCallback(
+    async (image: ImageDTO) => {
+      if (isGuest) return;
+      await updateImageByMembre(image);
+      refreshData();
+    },
+    [isGuest, updateImageByMembre, refreshData],
+  );
+
+  const handleSelectImage = useCallback(
+    (id: number) => {
+      setSelectedImageId(id);
+      localStorage.setItem(`widget_image_${widgetId}`, String(id));
+    },
+    [widgetId],
+  );
+
+  const handleRemoveSelection = useCallback(() => {
+    setSelectedImageId(null);
+    localStorage.removeItem(`widget_image_${widgetId}`);
+  }, [widgetId]);
+
   useEffect(() => {
     if (widgetId) {
       const savedImageId = localStorage.getItem(`widget_image_${widgetId}`);
@@ -77,71 +184,13 @@ const WidgetImages = memo(function WidgetImages({
     fetchConfig();
   }, [getConfig]);
 
-  const handleSubmitImage = async (
-    e: React.SyntheticEvent<HTMLFormElement>,
-  ) => {
-    e.preventDefault();
-    setErreur("");
-
-    if (
-      configLimits?.maxImages !== undefined &&
-      images.length >= configLimits.maxImages
-    ) {
-      setErreur("Nombre maximum d'images atteint.");
-      return;
-    }
-
-    if (!selectedFile) {
-      setErreur("Veuillez sélectionner un fichier.");
-      return;
-    }
-
-    if (selectedFile.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      setErreur(`L'image dépasse la taille maximale (${MAX_FILE_SIZE_MB} Mo).`);
-      return;
-    }
-
-    try {
-      await createImageByMembre(selectedFile);
-      await refreshData();
-      setIsModalOpen(false);
-      setSelectedFile(null);
-      setErreur("");
-    } catch (error: any) {
-      setErreur(
-        error.message || "Erreur lors de l'envoi du fichier au serveur.",
-      );
-    }
-  };
-
-  const handleDeleteImage = async (id: number) => {
-    await deleteImage(id);
-    if (selectedImageId === id) handleRemoveSelection(); 
-    refreshData();
-  };
-
-  const handleUpdateField = async (image: ImageDTO) => {
-    if (isGuest) return;
-    await updateImageByMembre(image);
-    refreshData();
-  };
-
-  const handleSelectImage = (id: number) => {
-    setSelectedImageId(id);
-    localStorage.setItem(`widget_image_${widgetId}`, String(id));
-  };
-
-  const handleRemoveSelection = () => {
-    setSelectedImageId(null);
-    localStorage.removeItem(`widget_image_${widgetId}`);
-  };
-
   useEffect(() => {
     if (!context?.auth.idUser) return;
 
     const frequence = `/topic/membre/${context.auth.idUser}`;
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+      webSocketFactory: () =>
+        new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
 
       reconnectDelay: 5000,
       onConnect: () => {
@@ -160,18 +209,7 @@ const WidgetImages = memo(function WidgetImages({
       window.clearTimeout(activationTimer);
       if (stompClient.active) void stompClient.deactivate();
     };
-  }, [context?.auth.idUser]);
-
-  async function refreshData() {
-    if (!context?.auth.idUser) return;
-    try {
-      const resultat = await getImagesByMembre();
-      setImages(resultat || []);
-      setRefreshKey(Date.now());
-    } catch (error) {
-      console.error("Erreur", error);
-    }
-  }
+  }, [context?.auth.idUser, refreshData]);
 
   const filteredImages = images.filter((img) =>
     (img.nom || "").toLowerCase().includes((searchTerm || "").toLowerCase()),
@@ -215,8 +253,8 @@ const WidgetImages = memo(function WidgetImages({
         onClose={onClose}
       >
         <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60 h-full bg-white">
-           <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-indigo-500 animate-spin" />
-           <p className="text-xs font-medium italic">Optimisation en cours...</p>
+          <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-indigo-500 animate-spin" />
+          <p className="text-xs font-medium italic">Optimisation en cours...</p>
         </div>
       </WidgetFrame>
     );
@@ -237,6 +275,7 @@ const WidgetImages = memo(function WidgetImages({
           options={
             <button
               onClick={handleRemoveSelection}
+              onMouseDown={(e) => e.stopPropagation()}
               className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-white/40 bg-white/15 text-white hover:bg-white/25 transition-colors"
               title="Retour à la galerie"
             >
@@ -244,13 +283,35 @@ const WidgetImages = memo(function WidgetImages({
             </button>
           }
         >
-          <div className="w-full h-full bg-slate-100 flex items-center justify-center overflow-hidden">
+          <div className="w-full h-full bg-slate-100 flex items-center justify-center overflow-hidden relative group">
             <img
               src={imageSrc}
               alt={img.nom}
               className="w-full h-full max-w-full max-h-full object-contain rounded-lg shadow-md"
               style={{ display: "block" }}
             />
+
+            {/* Navigation Arrows */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevImage}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
+                  title="Image précédente"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button
+                  onClick={handleNextImage}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 text-white hover:bg-black/50 transition-all opacity-0 group-hover:opacity-100"
+                  title="Image suivante"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </>
+            )}
           </div>
         </WidgetFrame>
       );
@@ -316,6 +377,7 @@ const WidgetImages = memo(function WidgetImages({
                       />
                       <button
                         onClick={() => handleSelectImage(img.id)}
+                        onMouseDown={(e) => e.stopPropagation()}
                         className="absolute top-2 left-2 p-1.5 bg-indigo-600/90 text-white hover:bg-indigo-500 rounded-md opacity-0 group-hover:opacity-100 transition-all shadow-md"
                         title="Afficher cette image dans le widget"
                       >
@@ -337,6 +399,7 @@ const WidgetImages = memo(function WidgetImages({
                     {!isGuest && (
                       <button
                         onClick={() => handleDeleteImage(img.id)}
+                        onMouseDown={(e) => e.stopPropagation()}
                         className="absolute top-2 right-2 p-1 bg-white/90 text-red-500 hover:bg-red-500 hover:text-white rounded-md opacity-0 group-hover:opacity-100 transition-all shadow-sm"
                         title="Supprimer cette image"
                       >
