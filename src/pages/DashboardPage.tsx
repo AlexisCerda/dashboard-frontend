@@ -395,7 +395,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-50 overflow-hidden text-sm text-slate-700">
+    <div className="flex flex-col h-full w-full overflow-hidden text-sm text-slate-700 bg-transparent">
       {context?.auth.idUser != null && (
         <ConfirmModal
           isOpen={isModalOpen}
@@ -427,7 +427,7 @@ export default function DashboardPage() {
 
       <div className="flex-1 min-h-0">
         <main
-          className="h-full overflow-y-scroll overflow-x-hidden relative p-6 bg-slate-50"
+          className="h-full overflow-y-scroll overflow-x-hidden relative p-8"
           id="widget-desktop"
         >
           <div className="mb-4 flex items-center gap-2 flex-wrap">
@@ -562,10 +562,10 @@ export default function DashboardPage() {
           {configs.length > 0 && (
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={`fixed bottom-16 right-6 p-3 rounded-full shadow-lg text-white transition-all hover:-translate-y-0.5 z-110 ${
+              className={`fixed bottom-16 right-8 p-4 rounded-2xl shadow-xl text-white transition-all duration-300 hover:-translate-y-1 z-110 ${
                 isSidebarOpen
-                  ? "bg-red-500 hover:bg-red-600 rotate-45"
-                  : "bg-green-600 hover:bg-green-700 hover:shadow-xl"
+                  ? "bg-rose-500 hover:bg-rose-600 rotate-45"
+                  : "bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-200/50"
               }`}
               title="Ajouter un widget"
             >
@@ -583,10 +583,10 @@ export default function DashboardPage() {
               setConfigCurrent(config.id);
               setErreur("");
             }}
-            className={`px-4 rounded-t-lg shadow-sm border border-slate-100 border-b-0 flex items-center gap-2 cursor-pointer transition-all ${
+            className={`px-5 rounded-t-xl shadow-sm border border-emerald-200/50 border-b-0 flex items-center gap-2 cursor-pointer transition-all duration-200 ${
               configCurrent === config.id
-                ? "bg-white border-t-2 border-blue-600 py-1.5 font-semibold text-slate-800"
-                : "bg-slate-100 py-1 text-slate-500 hover:bg-white font-medium"
+                ? "bg-white border-t-2 border-emerald-600 py-2 font-bold text-emerald-900 -translate-y-1"
+                : "bg-emerald-50/50 py-1.5 text-emerald-700 hover:bg-white font-medium backdrop-blur-sm"
             }`}
           >
             <span>{config.nom}</span>

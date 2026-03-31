@@ -49,7 +49,7 @@ export default function NavBar() {
   }, []);
 
   return (
-    <nav className="bg-white/95 backdrop-blur border-b-2 border-slate-200 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.5)] z-20">
+    <nav className="sticky top-0 bg-emerald-800/85 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_20px_-12px_rgba(6,78,59,0.4)] z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-6">
           <div className="flex items-center gap-6 min-w-0">
@@ -59,7 +59,7 @@ export default function NavBar() {
                   <>
                     <Link
                       to="/dashboard"
-                      className="hover:bg-slate-100 text-slate-800 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                      className="hover:bg-emerald-700/60 text-white px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
                     >
                       Mon Tableau de Bord
                     </Link>
@@ -67,7 +67,7 @@ export default function NavBar() {
                 )}
                 <Link
                   to="/help"
-                  className="hover:bg-slate-100 text-slate-500 hover:text-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="hover:bg-emerald-700/60 text-emerald-50 hover:text-white px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200"
                 >
                   Tutoriel
                 </Link>
@@ -75,19 +75,20 @@ export default function NavBar() {
             </div>
 
             {context?.isLogged && (
-              <div className="hidden xl:flex items-center px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-500 whitespace-nowrap">
+              <div className="hidden xl:flex items-center px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-emerald-100 whitespace-nowrap backdrop-blur-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
                 {user.nom} {user.prenom}
-                {" · id : "}
-                {user.id}
+                <span className="mx-2 text-emerald-600/50">|</span>
+                id : {user.id}
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {context?.isLogged && emailAdmin === emailUser && (
               <Link
                 to="/admin"
-                className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                className="flex items-center gap-2 p-2.5 text-emerald-200 hover:text-white hover:bg-emerald-700/60 rounded-xl transition-all duration-200"
                 title="Administration"
               >
                 <UserStar className="w-5 h-5" />
@@ -96,7 +97,7 @@ export default function NavBar() {
             {context?.isLogged && (
               <Link
                 to="/update-user"
-                className="flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                className="flex items-center gap-2 p-2.5 text-emerald-200 hover:text-white hover:bg-emerald-700/60 rounded-xl transition-all duration-200"
                 title="Mon profil"
               >
                 <UserCog className="w-5 h-5" />
@@ -106,7 +107,7 @@ export default function NavBar() {
             {context?.isLogged ? (
               <button
                 onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-md"
+                className="bg-white/10 text-white border border-white/20 hover:bg-rose-500 hover:border-rose-400 px-5 py-2 rounded-xl text-sm font-bold transition-all duration-200 active:scale-95"
               >
                 Déconnexion
               </button>
@@ -114,13 +115,13 @@ export default function NavBar() {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  className="bg-white text-emerald-800 hover:bg-emerald-50 px-5 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-sm"
                 >
                   Connexion
                 </Link>
                 <Link
                   to="/Signin"
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                  className="bg-emerald-700/50 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors active:scale-95"
                 >
                   Inscription
                 </Link>

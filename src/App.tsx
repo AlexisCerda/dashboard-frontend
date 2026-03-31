@@ -42,7 +42,7 @@ function App() {
   const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden bg-slate-50 text-slate-700">
+    <div className="h-screen w-full flex flex-col overflow-hidden text-emerald-950 bg-[radial-gradient(circle_at_top,_#f0fdfa_0%,_#ccfbf1_100%)]">
       <BrowserRouter basename={basename}>
 
         <NavBar />

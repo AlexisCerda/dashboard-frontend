@@ -13,7 +13,7 @@ const WidgetFrame = memo(function WidgetFrame({
   title,
   children,
   onClose,
-  headerColor = "bg-slate-700 text-white border-b border-slate-800",
+  headerColor = "bg-white text-slate-900 border-b border-slate-100",
   options,
 }: WidgetFrameProps) {
   return (
@@ -30,7 +30,7 @@ const WidgetFrame = memo(function WidgetFrame({
           <button
             onClick={onClose}
             onMouseDown={(e) => e.stopPropagation()}
-            className="ml-auto hover:bg-black/15 p-1 rounded-md transition-colors cursor-pointer text-inherit opacity-80 hover:opacity-100"
+            className="ml-auto hover:bg-slate-100 p-1.5 rounded-lg transition-all cursor-pointer text-slate-400 hover:text-rose-500"
             title="Fermer le widget"
           >
             <X size={16} />
