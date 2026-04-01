@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-    base: '/',
+    base: '/MyDashboard/',
 
   plugins: [
     react(),
@@ -11,5 +11,20 @@ export default defineConfig({
   ],
   define:{
     global:'window',
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/ws': {
+        target: 'http://localhost:8080',
+        ws: true,
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 })

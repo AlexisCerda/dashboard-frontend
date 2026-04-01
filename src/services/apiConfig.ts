@@ -1,4 +1,4 @@
-export const API_URL = "/api";
+export const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export const ROLE_INVITE = 0;
 export const ROLE_ADMIN = 1;
@@ -42,8 +42,7 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     console.warn("Token expiré ou invalide. Déconnexion automatique.");
     
     localStorage.removeItem("sidsic_token");
-    window.location.href = "/login"; 
-    throw new Error("Session expirée, redirection en cours...");
+    window.location.href = `${import.meta.env.BASE_URL}login`.replace(/\/+/, "/");    throw new Error("Session expirée, redirection en cours...");
   }
 
   return response;
