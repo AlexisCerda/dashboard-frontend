@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+export const API_URL = "/api";
 
 export const ROLE_INVITE = 0;
 export const ROLE_ADMIN = 1;

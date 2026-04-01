@@ -308,7 +308,7 @@ const WidgetTaches = memo(function WidgetTaches({
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
       webSocketFactory: () =>
-        new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+        new SockJS(import.meta.env.VITE_WS_URL || "/ws"),
 
       reconnectDelay: 5000,
       onConnect: () => {
@@ -789,27 +789,29 @@ const WidgetTaches = memo(function WidgetTaches({
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date de début (optionnel)
-            </label>
-            <input
-              type="date"
-              className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
-              value={dateDebut}
-              onChange={(e) => setDateDebut(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date de fin (optionnel)
-            </label>
-            <input
-              type="date"
-              className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
-              value={dateFin}
-              onChange={(e) => setDateFin(e.target.value)}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date de début (optionnel)
+              </label>
+              <input
+                type="date"
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
+                value={dateDebut}
+                onChange={(e) => setDateDebut(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date de fin (optionnel)
+              </label>
+              <input
+                type="date"
+                className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
+                value={dateFin}
+                onChange={(e) => setDateFin(e.target.value)}
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

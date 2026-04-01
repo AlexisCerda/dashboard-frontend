@@ -26,7 +26,7 @@ import {
 import EditableField from "../EditableField";
 
 const MAX_FILE_SIZE_MB = 5;
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:8080/";
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || "/";
 
 const WidgetImages = memo(function WidgetImages({
   widgetId,
@@ -190,7 +190,7 @@ const WidgetImages = memo(function WidgetImages({
     const frequence = `/topic/membre/${context.auth.idUser}`;
     const stompClient = new Client({
       webSocketFactory: () =>
-        new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+        new SockJS(import.meta.env.VITE_WS_URL || "/ws"),
 
       reconnectDelay: 5000,
       onConnect: () => {

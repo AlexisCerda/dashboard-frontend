@@ -60,7 +60,7 @@ npm install
 
 ### 4. Variables d'environnement
 
-Assurez-vous que l'URL de votre API correspond à votre serveur. Par défaut, les services (ex: `WidgetService.ts`) pointent vers `http://localhost:8080`.
+Assurez-vous que l'URL de votre API correspond à votre serveur. Par défaut, l'application utilise des chemins relatifs (`/api`, `/ws`).
 
 ### 5. Lancer l'application
 

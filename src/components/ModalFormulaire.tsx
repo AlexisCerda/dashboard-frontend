@@ -14,9 +14,9 @@ export default function ModalFormulaire({ isOpen, onClose, title, children }: Mo
 
   return createPortal(
     <div className="fixed inset-0 z-9999 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-md overflow-hidden flex flex-col">        
+      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">        
         
-        <div className="bg-slate-50 px-4 py-3 flex justify-between items-center border-b border-slate-100">
+        <div className="bg-slate-50 px-4 py-3 flex justify-between items-center border-b border-slate-100 shrink-0">
           <h3 className="font-semibold text-lg text-slate-800">{title}</h3>
           <button 
             onClick={onClose}
@@ -26,7 +26,7 @@ export default function ModalFormulaire({ isOpen, onClose, title, children }: Mo
           </button>
         </div>
 
-        <div className="p-4 bg-white">
+        <div className="p-4 bg-white overflow-y-auto flex-1 custom-scrollbar">
           {children}
         </div>
         

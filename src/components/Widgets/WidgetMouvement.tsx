@@ -217,7 +217,7 @@ const WidgetMouvements = memo(function WidgetMouvements({
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
       webSocketFactory: () =>
-        new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+        new SockJS(import.meta.env.VITE_WS_URL || "/ws"),
 
       reconnectDelay: 5000,
       onConnect: () => {
@@ -559,7 +559,7 @@ const WidgetMouvements = memo(function WidgetMouvements({
         title="Enregistrer un mouvement"
       >
         <form onSubmit={handleSubmitMouvement} className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Prénom
@@ -589,7 +589,7 @@ const WidgetMouvements = memo(function WidgetMouvements({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Date d'arrivée (optionnel)
@@ -634,9 +634,7 @@ const WidgetMouvements = memo(function WidgetMouvements({
             </div>
           )}
 
-          <div
-            className={`grid ${isCompactLayout ? "grid-cols-1" : "grid-cols-2"} gap-3`}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1 text-xs">
                 Service

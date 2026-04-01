@@ -49,7 +49,7 @@ const WidgetEquipe = memo(function WidgetEquipe({
     const frequence = `/topic/membre/${context.auth.idUser}`;
     const stompClient = new Client({
       webSocketFactory: () =>
-        new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+        new SockJS(import.meta.env.VITE_WS_URL || "/ws"),
       reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(frequence, (message) => {

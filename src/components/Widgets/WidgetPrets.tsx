@@ -169,7 +169,7 @@ const WidgetPrets = memo(function WidgetPrets({
 
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "/ws"),
 
       reconnectDelay: 5000,
       onConnect: () => {
@@ -450,8 +450,8 @@ const WidgetPrets = memo(function WidgetPrets({
         title="Nouveau Prêt de Matériel"
       >
         <form onSubmit={handleSubmitPret} className="flex flex-col gap-3">
-          <div className="grid grid-cols-4 gap-3">
-            <div className="col-span-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="sm:col-span-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Matériel emprunté
               </label>
@@ -465,7 +465,7 @@ const WidgetPrets = memo(function WidgetPrets({
                 onChange={(e) => setNomMateriel(e.target.value)}
               />
             </div>
-            <div className="col-span-1">
+            <div className="sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Quantité
               </label>
@@ -493,8 +493,8 @@ const WidgetPrets = memo(function WidgetPrets({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 border-t border-gray-200 mt-2 pt-3">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-gray-200 mt-2 pt-3">
+            <div className="sm:col-span-2">
               <span className="block text-xs font-bold text-gray-500 uppercase">
                 Emprunteur
               </span>
@@ -525,7 +525,7 @@ const WidgetPrets = memo(function WidgetPrets({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 border-t border-gray-200 mt-2 pt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-gray-200 mt-2 pt-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Date d'emprunt (optionnel)

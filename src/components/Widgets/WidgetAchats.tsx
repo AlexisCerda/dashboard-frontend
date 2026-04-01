@@ -164,7 +164,7 @@ const WidgetAchats = memo(function WidgetAchats({
 
     const frequence = `/topic/groupe/${context.groupeActifId}`;
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "http://localhost:8080/ws"),
+      webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || "/ws"),
 
       reconnectDelay: 5000,
       onConnect: () => {
@@ -410,8 +410,8 @@ const WidgetAchats = memo(function WidgetAchats({
       >
         <form onSubmit={handleSubmitAchat} className="flex flex-col gap-3">
           {/* ... Modal content ... */}
-          <div className="grid grid-cols-4 gap-3">
-            <div className="col-span-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="sm:col-span-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Matériel
               </label>
@@ -425,7 +425,7 @@ const WidgetAchats = memo(function WidgetAchats({
                 onChange={(e) => setNomMateriel(e.target.value)}
               />
             </div>
-            <div className="col-span-1">
+            <div className="sm:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Quantité
               </label>
@@ -440,7 +440,7 @@ const WidgetAchats = memo(function WidgetAchats({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Marque (optionnel)
@@ -467,8 +467,8 @@ const WidgetAchats = memo(function WidgetAchats({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 border-t border-gray-200 mt-2 pt-3">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-gray-200 mt-2 pt-3">
+            <div className="sm:col-span-2">
               <span className="block text-xs font-bold text-gray-500 uppercase">
                 Demandeur
               </span>
